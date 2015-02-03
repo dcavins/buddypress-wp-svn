@@ -85,7 +85,9 @@ function bp_core_install( $active_components = false ) {
 	}
 
 	// Invitations API
-	// bp_core_install_invitations();
+	if ( !empty( $active_components['invitations'] ) ) {
+		bp_core_install_invitations();
+	}
 }
 
 /**
@@ -471,23 +473,28 @@ function bp_core_install_invitations() {
 	$charset_collate = bp_core_set_charset();
 	$bp_prefix       = bp_core_get_table_prefix();
 
-	$sql[] = "CREATE TABLE {$bp_prefix}bp_notifications (
-				id bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	$sql[] = "CREATE TABLE {$bp_prefix}bp_invitations (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
 				user_id bigint(20) NOT NULL,
-				item_id bigint(20) NOT NULL,
-				secondary_item_id bigint(20),
+				inviter_id bigint(20) NOT NULL,
+				invitee_email varchar(100) DEFAULT NULL,
 				component_name varchar(75) NOT NULL,
 				component_action varchar(75) NOT NULL,
-				date_notified datetime NOT NULL,
-				is_new bool NOT NULL DEFAULT 0,
+				item_id bigint(20) NOT NULL,
+				secondary_item_id bigint(20) DEFAULT NULL,
+				date_modified datetime NOT NULL,
+				invite_sent tinyint(1) NOT NULL DEFAULT '0',
+				PRIMARY KEY (id),
 				KEY item_id (item_id),
 				KEY secondary_item_id (secondary_item_id),
 				KEY user_id (user_id),
-				KEY is_new (is_new),
 				KEY component_name (component_name),
 				KEY component_action (component_action),
-				KEY useritem (user_id,is_new)
-			) {$charset_collate};";
+				KEY useritem (user_id,invite_sent),
+				KEY invite_sent (invite_sent),
+				KEY inviter_id (inviter_id),
+				KEY invitee_email (invitee_email)
+				) {$charset_collate};";
 
 	dbDelta( $sql );
 }
