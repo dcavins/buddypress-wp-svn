@@ -395,6 +395,10 @@ function bp_core_admin_get_components( $type = 'all' ) {
 		'blogs'    => array(
 			'title'       => __( 'Site Tracking', 'buddypress' ),
 			'description' => __( 'Record activity for new posts and comments from your site.', 'buddypress' )
+		),
+		'invitations'    => array(
+			'title'       => __( 'Invitations', 'buddypress' ),
+			'description' => __( 'Allow members to manage invitations.', 'buddypress' )
 		)
 	);
 
