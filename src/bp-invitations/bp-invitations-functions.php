@@ -24,7 +24,7 @@ if ( !defined( 'ABSPATH' ) ) {
  * @since BuddyPress (2.3.0)
  *
  * @param array $args {
- *     Array of arguments describing the notification. All are optional.
+ *     Array of arguments describing the invitation. All are optional.
  *	   @type int $user_id ID of the invited user.
  *	   @type int $inviter_id ID of the user who created the invitation.
  *	   @type string $invitee_email Email address of the invited user.
@@ -87,7 +87,7 @@ function bp_invitations_add_invitation( $args = array() ) {
 	}
 
 	// Check for existing duplicate invitations
-	$existing = BP_Notifications_Notification::get( array(
+	$existing = BP_Invitations_Invitation::get( array(
 		'user_id'           => $r['user_id'],
 		'inviter_id'        => $r['inviter_id'],
 		'invitee_email'     => $r['invitee_email'],
@@ -193,7 +193,7 @@ function bp_invitations_get_incoming_invitations_for_user( $user_id = 0 ) {
 		$user_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
 	}
 
-	// Get notifications out of the cache, or query if necessary
+	// Get invitations out of the cache, or query if necessary
 	$invitations = wp_cache_get( 'all_to_user_' . $user_id, 'bp_invitations' );
 	if ( false === $invitations ) {
 		$invitations = BP_Invitations_Invitation::get_sent_to_user( array(
@@ -222,7 +222,7 @@ function bp_invitations_get_outgoing_invitations_for_user( $user_id = 0 ) {
 		$user_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
 	}
 
-	// Get notifications out of the cache, or query if necessary
+	// Get invitations out of the cache, or query if necessary
 	$invitations = wp_cache_get( 'all_from_user_' . $user_id, 'bp_invitations' );
 	if ( false === $invitations ) {
 		$invitations = BP_Invitations_Invitation::get_all_from_user( array(
@@ -232,7 +232,7 @@ function bp_invitations_get_outgoing_invitations_for_user( $user_id = 0 ) {
 	}
 
 	// Filter and return
-	return apply_filters( 'bp_invitations_get_incoming_invitations_for_user', $notifications, $user_id );
+	return apply_filters( 'bp_invitations_get_incoming_invitations_for_user', $invitations, $user_id );
 }
 
 /** Update ********************************************************************/
@@ -255,9 +255,6 @@ function bp_invitations_get_outgoing_invitations_for_user( $user_id = 0 ) {
  */
 function bp_invitations_update_invitation( $update_args = array(), $where_args = array() ) {
 	//@TODO: access check
-	// if ( ! bp_notifications_check_notification_access( bp_loggedin_user_id(), $id ) ) {
-	// 	return false;
-	// }
 
 	return BP_Invitations_Invitation::mark_as_sent( $update_args = array(), $where_args = array() );
 }
@@ -272,9 +269,6 @@ function bp_invitations_update_invitation( $update_args = array(), $where_args =
  */
 function bp_invitations_mark_as_sent( $id ) {
 	//@TODO: access check
-	// if ( ! bp_notifications_check_notification_access( bp_loggedin_user_id(), $id ) ) {
-	// 	return false;
-	// }
 
 	return BP_Invitations_Invitation::mark_as_sent( $id );
 }
@@ -294,9 +288,6 @@ function bp_invitations_mark_as_sent( $id ) {
  */
 function bp_invitations_delete_invitation( $id ) {
 	//@TODO: access check
-	// if ( ! bp_notifications_check_notification_access( bp_loggedin_user_id(), $id ) ) {
-	// 	return false;
-	// }
 
 	return BP_Invitations_Invitation::delete_by_id( $id );
 }
@@ -314,7 +305,7 @@ function bp_invitations_delete_invitation( $id ) {
  * @return bool True on success, false on failure.
  */
 function bp_invitations_delete_all_invitations_by_component( $component_name, $component_action = false ) {
-	return BP_Notifications_Notification::delete( array(
+	return BP_Invitations_Invitation::delete( array(
 		'component_name'    => $component_name,
 		'component_action'  => $component_action,
 	) );
@@ -323,28 +314,13 @@ function bp_invitations_delete_all_invitations_by_component( $component_name, $c
 /** Helpers *******************************************************************/
 
 /**
- * Check if a user has access to a specific notification.
- *
- * Used before deleting a notification for a user.
- *
- * @since BuddyPress (1.9.0)
- *
- * @param int $user_id ID of the user being checked.
- * @param int $notification_id ID of the notification being checked.
- * @return bool True if the notification belongs to the user, otherwise false.
- */
-// function bp_notifications_check_notification_access( $user_id, $notification_id ) {
-// 	return (bool) BP_Notifications_Notification::check_access( $user_id, $notification_id );
-// }
-
-/**
  * Get a count of incoming invitations for a user.
  *
  * @since BuddyPress (2.3.0)
  *
  * @param int $user_id ID of the user whose incoming invitations are being
  *        counted.
- * @return int Unread notification count.
+ * @return int Incoming invitation count.
  */
 function bp_invitations_get_incoming_invitation_count( $user_id = 0 ) {
 	$invitations = bp_invitations_get_incoming_invitations_for_user( $user_id );
@@ -379,6 +355,6 @@ function bp_invitations_get_registered_components() {
 		}
 	}
 
-	// Return active components with registered notifications callbacks
+	// Return active components with registered invitations callbacks
 	return apply_filters( 'bp_invitations_get_registered_components', $component_names, $active_components );
 }

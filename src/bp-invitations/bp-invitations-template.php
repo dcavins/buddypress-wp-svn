@@ -205,8 +205,8 @@ class BP_Invitations_Template {
 		$this->sort_order   = $r['sort_order'];
 
 		// Setup the invitations to loop through
-		$this->invitations            = BP_Invitations_Notification::get( $r );
-		$this->total_invitation_count = BP_Invitations_Notification::get_total_count( $r );
+		$this->invitations            = BP_Invitations_Invitation::get( $r );
+		$this->total_invitation_count = BP_Invitations_Invitation::get_total_count( $r );
 
 		if ( empty( $this->invitations ) ) {
 			$this->invitation_count       = 0;
@@ -354,7 +354,7 @@ class BP_Invitations_Template {
  *     Arguments for limiting the contents of the invitations loop. Can be
  *     passed as an associative array, or as a URL query string.
  *
- *     See {@link BP_Invitations_Notification::get()} for detailed
+ *     See {@link BP_Invitations_Invitation::get()} for detailed
  *     information on the arguments.  In addition, also supports:
  *
  *     @type int $max Optional. Max items to display. Default: false.
@@ -397,7 +397,7 @@ function bp_has_invitations( $args = '' ) {
 		'per_page'          => 25,
 
 		// these are additional arguments that are not available in
-		// BP_Invitations_Notification::get()
+		// BP_Invitations_Invitation::get()
 		'max'               => false,
 		'page_arg'          => 'npage',
 	), 'has_invitations' );
