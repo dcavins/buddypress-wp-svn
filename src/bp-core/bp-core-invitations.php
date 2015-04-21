@@ -56,6 +56,7 @@ function bp_invitations_add_invitation( $args = array() ) {
 		'component_action'  => '',
 		'item_id'           => 0,
 		'secondary_item_id' => 0,
+		'type'				=> false,
 		'content'			=> '',
 		'date_modified'     => bp_core_current_time(),
 		'invite_sent'       => 0,
@@ -114,6 +115,7 @@ function bp_invitations_add_invitation( $args = array() ) {
 	$invitation->component_action  = $r['component_action'];
 	$invitation->item_id           = $r['item_id'];
 	$invitation->secondary_item_id = $r['secondary_item_id'];
+	$invitation->type              = $r['type'];
 	$invitation->date_modified     = $r['date_modified'];
 	$invitation->invite_sent       = $r['invite_sent'];
 
@@ -182,6 +184,7 @@ function bp_invitations_get_invitation_by_id( $id ) {
  *                        of multiple item IDs.
  *     @type int|array    $secondary_item_id ID of secondary associated
  *                        item. Can be an array of multiple IDs.
+ *     @type string|array $type Invite or request.
  *     @type string       $invite_sent Limit to draft, sent or all
  *                        invitations. 'draft' returns only unsent
  *                        invitations, 'sent' returns only sent
@@ -204,70 +207,9 @@ function bp_invitations_get_invitations( $args ) {
 }
 
 /**
- * Get incoming invitations for a user.
- * We get and cache all of the  incoming invitations to a user. We'll
- * filter the complete result set in PHP, in order to take advantage of
- * the cache. This set will include requests from the user to join items
- * (like groups), too.
- *
- * @since BuddyPress (2.3.0)
- *
- * @param int $user_id ID of the user whose incoming invitations are being
- * 		      fetched.
- * @return array Located invitations.
- */
-function bp_invitations_get_all_to_user( $user_id = 0 ) {
-
-	// Default to displayed user or logged-in user if no ID is passed
-	if ( empty( $user_id ) ) {
-		$user_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
-	}
-
-	// Get invitations out of the cache, or query if necessary
-	$invitations = wp_cache_get( 'all_to_user_' . $user_id, 'bp_invitations' );
-	if ( false === $invitations ) {
-		$invitations = BP_Invitations_Invitation::get_all_to_user( $user_id );
-		wp_cache_set( 'all_to_user_' . $user_id, $invitations, 'bp_invitations' );
-	}
-
-	// @TODO: document filter hook
-	return apply_filters( 'bp_invitations_get_all_to_user', $invitations, $user_id );
-}
-
-/**
- * Get outgoing invitations from a user.
- * We get and cache all of the outgoing invitations from a user. We'll
- * filter the complete result set in PHP, in order to take advantage of
- * the cache.
- *
- * @since BuddyPress (2.3.0)
- *
- * @param int $inviter_id ID of the user for whom the ougoing
- *            invitations are being fetched.
- *            Default: logged-in user ID.
- * @return array $invitations Array of invitation results.
- *               (Returns an empty array if none found.)
- */
-function bp_invitations_get_all_from_user( $inviter_id = 0 ) {
-
-	// Default to displayed user if no ID is passed
-	if ( empty( $inviter_id ) ) {
-		$inviter_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
-	}
-
-	// Get invitations out of the cache, or query if necessary
-	$invitations = wp_cache_get( 'all_from_user_' . $inviter_id, 'bp_invitations' );
-	if ( false === $invitations ) {
-		$invitations = BP_Invitations_Invitation::get_all_from_user( $inviter_id );
-		wp_cache_set( 'all_from_user_' . $inviter_id, $invitations, 'bp_$invitations' );
-	}
-
-	// @TODO: document filter hook
-	return apply_filters( 'bp_invitations_get_all_from_user', $invitations, $inviter_id );
-}
-
-/**
- * Get invitations, based on provided filter parameters.
+ * Get invitations, based on provided filter parameters. This is the
+ * Swiss Army Knife function. When possible, use the filter_invitations
+ * functions that take advantage of caching.
  *
  * @since BuddyPress (2.3.0)
  *
@@ -308,9 +250,142 @@ function bp_invitations_get_all_from_user( $inviter_id = 0 ) {
 function bp_invitations_get_requests( $args ) {
 	// Set request-specific parameters.
 	$args['type'] = 'request';
-	$args['invited_id'] = 0;
+	$args['inviter_id'] = 0;
 	$args['invite_sent'] = 'all';
 	return BP_Invitations_Invitation::get( $args );
+}
+
+/**
+ * @param array $args {
+ *     Array of optional arguments.
+ *     @type string|array $invitee_email Email address of invited users
+ *			              being queried. Can be an array of addresses.
+ *     @type string|array $component_name Name of the component to
+ *                        filter by. Can be an array of component names.
+ *     @type string|array $component_action Name of the action to
+ *                        filter by. Can be an array of actions.
+ *     @type int|array    $item_id ID of associated item. Can be an array
+ *                        of multiple item IDs.
+ *     @type int|array    $secondary_item_id ID of secondary associated
+ *                        item. Can be an array of multiple IDs.
+ *     @type string       $invite_sent Limit to draft, sent or all
+ *                        invitations. 'draft' returns only unsent
+ *                        invitations, 'sent' returns only sent
+ *                        invitations, 'all' returns all. Default: 'all'.
+ *     @type string       $order_by Database column to order by.
+ *     @type string       $sort_order Either 'ASC' or 'DESC'.
+ * }
+ */
+function bp_get_user_invitations( $user_id = 0, $args = array(), $invitee_email = false ){
+	$r = bp_parse_args( $args, array(
+		'component_name' => true,
+		'is_banned'    => false,
+		'is_admin'     => false,
+ 		'is_mod'       => false,
+		'invite_sent'  => null,
+		'orderby'      => 'group_id',
+		'order'        => 'ASC',
+	), 'get_user_invitations' );
+
+	// Two cases: we're searching by email address or user ID.
+	if ( ! empty( $invitee_email ) && is_email( $invitee_email ) ) {
+		// Get invitations out of the cache, or query if necessary
+		$encoded_email = rawurlencode( $invitee_email );
+		$invitations = wp_cache_get( 'all_to_user_' . $encoded_email, 'bp_invitations' );
+		if ( false === $invitations ) {
+			$invitations = BP_Invitations_Invitation::get_all_to_user_email( $invitee_email );
+			wp_cache_set( 'all_to_user_' . $encoded_email, $invitations, 'bp_invitations' );
+		}
+	} else {
+		// Default to displayed user or logged-in user if no ID is passed
+		if ( empty( $user_id ) ) {
+			$user_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
+		}
+		// Get invitations out of the cache, or query if necessary
+		$invitations = wp_cache_get( 'all_to_user_' . $user_id, 'bp_invitations' );
+		if ( false === $invitations ) {
+			$invitations = BP_Invitations_Invitation::get_all_to_user( $user_id );
+			wp_cache_set( 'all_to_user_' . $user_id, $invitations, 'bp_invitations' );
+		}
+	}
+
+	// @TODO: document filter hook
+	return apply_filters( 'bp_invitations_get_all_to_user', $invitations, $user_id );
+}
+
+function bp_get_user_requests( $inviter_id = 0, $args = array() ){
+	// Default to displayed user or logged-in user if no ID is passed
+	if ( empty( $user_id ) ) {
+		$user_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
+	}
+
+	// Get invitations out of the cache, or query if necessary
+	$invitations = wp_cache_get( 'all_to_user_' . $user_id, 'bp_invitations' );
+	if ( false === $invitations ) {
+		$invitations = BP_Invitations_Invitation::get_all_to_user( $user_id );
+		wp_cache_set( 'all_to_user_' . $user_id, $invitations, 'bp_invitations' );
+	}
+
+	// @TODO: document filter hook
+	return apply_filters( 'bp_invitations_get_all_to_user', $invitations, $user_id );
+}
+
+/**
+ * Get outgoing invitations from a user.
+ * We get and cache all of the outgoing invitations from a user. We'll
+ * filter the complete result set in PHP, in order to take advantage of
+ * the cache.
+ *
+ * @since BuddyPress (2.3.0)
+ *
+ * @param int $inviter_id ID of the user for whom the ougoing
+ *            invitations are being fetched.
+ *            Default: logged-in user ID.
+ * @return array $invitations Array of invitation results.
+ *               (Returns an empty array if none found.)
+ */
+function bp_invitations_get_all_from_user( $inviter_id = 0 ) {
+}
+
+/**
+ * @param array $args {
+ *     Array of optional arguments.
+ *     @type int|array    $id ID of invitation. Can be an array of IDs.
+ *     @type int|array    $user_id ID of user being queried. Can be an
+ *                        array of user IDs.
+ *     @type string|array $invitee_email Email address of invited users
+ *			              being queried. Can be an array of addresses.
+ *     @type string|array $component_name Name of the component to
+ *                        filter by. Can be an array of component names.
+ *     @type string|array $component_action Name of the action to
+ *                        filter by. Can be an array of actions.
+ *     @type int|array    $item_id ID of associated item. Can be an array
+ *                        of multiple item IDs.
+ *     @type int|array    $secondary_item_id ID of secondary associated
+ *                        item. Can be an array of multiple IDs.
+ *     @type string       $invite_sent Limit to draft, sent or all
+ *                        invitations. 'draft' returns only unsent
+ *                        invitations, 'sent' returns only sent
+ *                        invitations, 'all' returns all. Default: 'all'.
+ *     @type string       $order_by Database column to order by.
+ *     @type string       $sort_order Either 'ASC' or 'DESC'.
+ * }
+ */
+function bp_get_invitations_from_user( $inviter_id = 0, $args = array() ){
+	// Default to displayed user if no ID is passed
+	if ( empty( $inviter_id ) ) {
+		$inviter_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
+	}
+
+	// Get invitations out of the cache, or query if necessary
+	$invitations = wp_cache_get( 'all_from_user_' . $inviter_id, 'bp_invitations' );
+	if ( false === $invitations ) {
+		$invitations = BP_Invitations_Invitation::get_all_from_user( $inviter_id );
+		wp_cache_set( 'all_from_user_' . $inviter_id, $invitations, 'bp_$invitations' );
+	}
+
+	// @TODO: document filter hook
+	return apply_filters( 'bp_invitations_get_all_from_user', $invitations, $inviter_id );
 }
 
 /** Update ********************************************************************/
@@ -333,7 +408,7 @@ function bp_invitations_get_requests( $args ) {
  */
 function bp_invitations_update_invitation( $update_args = array(), $where_args = array() ) {
 	//@TODO: access check
-	return BP_Invitations_Invitation::update( $update_args = array(), $where_args = array() );
+	return BP_Invitations_Invitation::update( $update_args, $where_args );
 }
 
 /**
@@ -356,7 +431,7 @@ function bp_invitations_mark_as_sent_by_id( $id ) {
  *
  * @since BuddyPress (2.3.0)
  *
-	 * @param array $args {
+ * @param array $args {
  *     Associative array of arguments. All arguments but $page and
  *     $per_page can be treated as filter values for get_where_sql()
  *     and get_query_clauses(). All items are optional.
@@ -409,9 +484,26 @@ function bp_invitations_delete_invitation_by_id( $id ) {
  * @see bp_invitations_get_invitations() for a description of
  *      accepted where arguments.
  *
- * @param array $args Associative array of columns/values, to determine
- *              which rows should be deleted.  Of the format
- *              array( 'user_id' => 7, 'component_name' => 'groups', )
+ * @param array $args {
+ *     Associative array of arguments. All arguments but $page and
+ *     $per_page can be treated as filter values for get_where_sql()
+ *     and get_query_clauses(). All items are optional.
+ *     @type int|array    $user_id ID of user being queried. Can be an
+ *                        array of user IDs.
+ *     @type int|array    $inviter_id ID of user who created the
+ *                        invitation. Can be an array of user IDs.
+ *                        Special cases
+ *     @type string|array $invitee_email Email address of invited users
+ *			              being queried. Can be an array of addresses.
+ *     @type string|array $component_name Name of the component to
+ *                        filter by. Can be an array of component names.
+ *     @type string|array $component_action Name of the action to
+ *                        filter by. Can be an array of actions.
+ *     @type int|array    $item_id ID of associated item. Can be an array
+ *                        of multiple item IDs.
+ *     @type int|array    $secondary_item_id ID of secondary associated
+ *                        item. Can be an array of multiple IDs.
+ * }
  * @return int|false Number of rows deleted on success, false on failure.
  */
 function bp_invitations_delete_invitation( $args ) {
@@ -466,7 +558,7 @@ function bp_invitations_get_incoming_invitation_count( $user_id = 0 ) {
  *
  * @param BP_Invitations_Invitation $n Invitation object.
  */
-function bp_invitations_clear_user_caches_after_save( BP_Invitations $n ) {
+function bp_invitations_clear_user_caches_after_save( BP_Invitations_Invitation $n ) {
 	// User_id could be empty if a non-member is being invited via email.
 	if ( ! empty( $n->user_id ) ) {
 		wp_cache_delete( 'all_to_user_' . $n->user_id, 'bp_invitations' );
@@ -507,3 +599,5 @@ function bp_invitations_clear_user_caches_before_update( $args ) {
 }
 add_action( 'bp_invitation_before_update', 'bp_invitations_clear_user_caches_before_update' );
 add_action( 'bp_invitation_before_delete', 'bp_invitations_clear_user_caches_before_update' );
+
+//@TODO: Actions for removing invitations when a user is deleted.
