@@ -5238,18 +5238,20 @@ class BP_Groups_Membership_Requests_Template {
 		$this->pag_page = bp_sanitize_pagination_arg( $this->pag_arg, $r['page']     );
 		$this->pag_num  = bp_sanitize_pagination_arg( 'num',          $r['per_page'] );
 
-		$mquery = new BP_Group_Member_Query( array(
-			'group_id' => $r['group_id'],
-			'type'     => $r['type'],
-			'per_page' => $this->pag_num,
-			'page'     => $this->pag_page,
+		// $mquery = new BP_Group_Member_Query( array(
+		// 	'group_id' => $r['group_id'],
+		// 	'type'     => $r['type'],
+		// 	'per_page' => $this->pag_num,
+		// 	'page'     => $this->pag_page,
 
-			// These filters ensure we only get pending requests
-			'is_confirmed' => false,
-			'inviter_id'   => 0,
-		) );
+		// 	// These filters ensure we only get pending requests
+		// 	'is_confirmed' => false,
+		// 	'inviter_id'   => 0,
+		// ) );
 
-		$this->requests      = array_values( $mquery->results );
+		$mquery = BP_Groups_Group::get_membership_requests( $r['group_id'], $this->pag_num, $this->pag_page );
+
+		$this->requests      = array_values( $mquery->requests );
 		$this->request_count = count( $this->requests );
 
 		// Compatibility with legacy format of request data objects
@@ -5258,14 +5260,15 @@ class BP_Groups_Membership_Requests_Template {
 			// request must match the membership id, not the ID of
 			// the user (as it's returned by BP_Group_Member_Query)
 			$this->requests[ $rk ]->user_id = $rv->ID;
-			$this->requests[ $rk ]->id      = $rv->membership_id;
+			// @TODO: This will probably be unnecessary
+			// $this->requests[ $rk ]->id      = $rv->membership_id;
 
 			// Miscellaneous values
 			$this->requests[ $rk ]->group_id   = $r['group_id'];
 		}
 
-		if ( empty( $r['max'] ) || ( $r['max'] >= (int) $mquery->total_users ) ) {
-			$this->total_request_count = (int) $mquery->total_users;
+		if ( empty( $r['max'] ) || ( $r['max'] >= (int) $mquery->total ) ) {
+			$this->total_request_count = (int) $mquery->total;
 		} else {
 			$this->total_request_count = (int) $r['max'];
 		}
@@ -5595,16 +5598,17 @@ class BP_Groups_Invite_Template {
 		$this->pag_page = bp_sanitize_pagination_arg( $this->pag_arg, $r['page']     );
 		$this->pag_num  = bp_sanitize_pagination_arg( 'num',          $r['per_page'] );
 
-		$iquery = new BP_Group_Member_Query( array(
-			'group_id' => $r['group_id'],
-			'type'     => 'first_joined',
-			'per_page' => $this->pag_num,
-			'page'     => $this->pag_page,
+		// $iquery = new BP_Group_Member_Query( array(
+		// 	'group_id' => $r['group_id'],
+		// 	'type'     => 'first_joined',
+		// 	'per_page' => $this->pag_num,
+		// 	'page'     => $this->pag_page,
 
-			// These filters ensure we get only pending invites
-			'is_confirmed' => false,
-			'inviter_id'   => $r['user_id'],
-		) );
+		// 	// These filters ensure we get only pending invites
+		// 	'is_confirmed' => false,
+		// 	'inviter_id'   => $r['user_id'],
+		// ) );
+		$mquery = BP_Groups_Group::get_membership_requests( $r['group_id'], $this->pag_num, $this->pag_page );
 
 		$this->invite_data        = $iquery->results;
 		$this->total_invite_count = $iquery->total_users;

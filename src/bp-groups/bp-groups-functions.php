@@ -1275,6 +1275,22 @@ function groups_get_invites_for_group( $user_id, $group_id ) {
 }
 
 /**
+ * Get outstanding invites to a given group from a specified user.
+ *
+ * @param int $user_id ID of the inviting user.
+ * @param int $group_id ID of the group.
+ * @param int $limit Optional. Max number of results to return.
+ *            Default: false (no limit).
+ * @param int $page Optional. Page offset of results to return.
+ *            Default: false (no limit).
+ * @return array IDs of users who have been invited to the group by the
+ *         user but have not yet accepted.
+ */
+function groups_get_invites_from_user( $user_id, $group_id, $limit = false, $page = false ) {
+	return BP_Groups_Group::get_invites_from_user( $user_id, $group_id, $limit, $page );
+}
+
+/**
  * Check to see whether a user has already been invited to a group.
  *
  * By default, the function checks for invitations that have been sent.

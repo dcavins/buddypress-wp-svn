@@ -258,15 +258,13 @@ function bp_invitations_get_requests( $args ) {
 /**
  * @param array $args {
  *     Array of optional arguments.
- *     @type string|array $invitee_email Email address of invited users
- *			              being queried. Can be an array of addresses.
- *     @type string|array $component_name Name of the component to
- *                        filter by. Can be an array of component names.
- *     @type string|array $component_action Name of the action to
- *                        filter by. Can be an array of actions.
- *     @type int|array    $item_id ID of associated item. Can be an array
+ *     @type string $component_name Name of the component to
+ *                        filter by.
+ *     @type string $component_action Name of the action to
+ *                        filter by.
+ *     @type int   $item_id ID of associated item. Can be an array
  *                        of multiple item IDs.
- *     @type int|array    $secondary_item_id ID of secondary associated
+ *     @type int    $secondary_item_id ID of secondary associated
  *                        item. Can be an array of multiple IDs.
  *     @type string       $invite_sent Limit to draft, sent or all
  *                        invitations. 'draft' returns only unsent
@@ -278,14 +276,16 @@ function bp_invitations_get_requests( $args ) {
  */
 function bp_get_user_invitations( $user_id = 0, $args = array(), $invitee_email = false ){
 	$r = bp_parse_args( $args, array(
-		'component_name' => true,
-		'is_banned'    => false,
-		'is_admin'     => false,
- 		'is_mod'       => false,
-		'invite_sent'  => null,
-		'orderby'      => 'group_id',
-		'order'        => 'ASC',
+		'component_name'    => '',
+		'component_action'  => '',
+		'item_id'           => null,
+		'secondary_item_id' => null,
+ 		'type'              => null,
+		'invite_sent'       => null,
+		'orderby'           => 'id',
+		'order'             => 'ASC',
 	), 'get_user_invitations' );
+	$invitations = array();
 
 	// Two cases: we're searching by email address or user ID.
 	if ( ! empty( $invitee_email ) && is_email( $invitee_email ) ) {
@@ -309,25 +309,56 @@ function bp_get_user_invitations( $user_id = 0, $args = array(), $invitee_email 
 		}
 	}
 
+    // Normalize group data.
+	foreach ( $invitations as &$invitation ) {
+		// Integer values.
+		foreach ( array( 'item_id', 'secondary_item_id' ) as $index ) {
+			$invitation->{$index} = intval( $invitation->{$index} );
+		}
+		// Boolean values.
+		$invitation->invite_sent = (bool) $invitation->invite_sent;
+	}
+
+	// Filter the results
+	// Assemble filter array for use in `wp_list_filter()`.
+	$filters = wp_array_slice_assoc( $r, array( 'component_name', 'component_action', 'item_id', 'secondary_item_id', 'type', 'invite_sent' ) );
+	foreach ( $filters as $filter_name => $filter_value ) {
+		if ( is_null( $filter_value ) ) {
+			unset( $filters[ $filter_name ] );
+		}
+	}
+
+	if ( ! empty( $filters ) ) {
+		$invitations = wp_list_filter( $invitations, $filters );
+	}
+
+	// Sort the results if necessary.
+	if ( in_array( $r['orderby'], array( 'component_name', 'component_action', 'item_id', 'secondary_item_id' ) ) ) {
+		$invitations = bp_sort_by_key( $invitations, $r['orderby'] );
+	}
+
+	// By default, results are ordered ASC.
+	if ( 'DESC' === strtoupper( $r['order'] ) ) {
+		// `true` to preserve keys.
+		$invitations = array_reverse( $invitations, true );
+	}
+
 	// @TODO: document filter hook
-	return apply_filters( 'bp_invitations_get_all_to_user', $invitations, $user_id );
+	return apply_filters( 'bp_get_user_invitations', $invitations, $user_id, $args );
 }
 
-function bp_get_user_requests( $inviter_id = 0, $args = array() ){
-	// Default to displayed user or logged-in user if no ID is passed
-	if ( empty( $user_id ) ) {
-		$user_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
-	}
+function bp_get_user_requests( $user_id = 0, $args = array() ){
+	// Requests are a type of invitation, so we can use our main function.
+	$args['type']        = 'request';
+	// Passing false on the invite_sent will ensure that all statuses are returned.
+	$args['invite_sent'] = false;
 
-	// Get invitations out of the cache, or query if necessary
-	$invitations = wp_cache_get( 'all_to_user_' . $user_id, 'bp_invitations' );
-	if ( false === $invitations ) {
-		$invitations = BP_Invitations_Invitation::get_all_to_user( $user_id );
-		wp_cache_set( 'all_to_user_' . $user_id, $invitations, 'bp_invitations' );
-	}
+	// Requests can only be made by registered users, not by email address,
+	// so we don't include an email address.
+	$requests = bp_get_user_invitations( $user_id, $args );
 
 	// @TODO: document filter hook
-	return apply_filters( 'bp_invitations_get_all_to_user', $invitations, $user_id );
+	return apply_filters( 'bp_get_user_requests', $requests, $user_id, $args );
 }
 
 /**
@@ -338,19 +369,8 @@ function bp_get_user_requests( $inviter_id = 0, $args = array() ){
  *
  * @since BuddyPress (2.3.0)
  *
- * @param int $inviter_id ID of the user for whom the ougoing
- *            invitations are being fetched.
- *            Default: logged-in user ID.
- * @return array $invitations Array of invitation results.
- *               (Returns an empty array if none found.)
- */
-function bp_invitations_get_all_from_user( $inviter_id = 0 ) {
-}
-
-/**
  * @param array $args {
  *     Array of optional arguments.
- *     @type int|array    $id ID of invitation. Can be an array of IDs.
  *     @type int|array    $user_id ID of user being queried. Can be an
  *                        array of user IDs.
  *     @type string|array $invitee_email Email address of invited users
@@ -370,8 +390,22 @@ function bp_invitations_get_all_from_user( $inviter_id = 0 ) {
  *     @type string       $order_by Database column to order by.
  *     @type string       $sort_order Either 'ASC' or 'DESC'.
  * }
+ * @return array $invitations Array of invitation results.
+ *               (Returns an empty array if none found.)
  */
-function bp_get_invitations_from_user( $inviter_id = 0, $args = array() ){
+function bp_get_invitations_from_user( $inviter_id = 0, $args = array() ) {
+	$r = bp_parse_args( $args, array(
+		'component_name'    => '',
+		'component_action'  => '',
+		'item_id'           => null,
+		'secondary_item_id' => null,
+ 		'type'              => null,
+		'invite_sent'       => null,
+		'orderby'           => 'id',
+		'order'             => 'ASC',
+	), 'get_user_invitations' );
+	$invitations = array();
+
 	// Default to displayed user if no ID is passed
 	if ( empty( $inviter_id ) ) {
 		$inviter_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
@@ -384,8 +418,42 @@ function bp_get_invitations_from_user( $inviter_id = 0, $args = array() ){
 		wp_cache_set( 'all_from_user_' . $inviter_id, $invitations, 'bp_$invitations' );
 	}
 
+    // Normalize group data.
+	foreach ( $invitations as &$invitation ) {
+		// Integer values.
+		foreach ( array( 'item_id', 'secondary_item_id' ) as $index ) {
+			$invitation->{$index} = intval( $invitation->{$index} );
+		}
+		// Boolean values.
+		$invitation->invite_sent = (bool) $invitation->invite_sent;
+	}
+
+	// Filter the results
+	// Assemble filter array for use in `wp_list_filter()`.
+	$filters = wp_array_slice_assoc( $r, array( 'component_name', 'component_action', 'item_id', 'secondary_item_id', 'type', 'invite_sent' ) );
+	foreach ( $filters as $filter_name => $filter_value ) {
+		if ( is_null( $filter_value ) ) {
+			unset( $filters[ $filter_name ] );
+		}
+	}
+
+	if ( ! empty( $filters ) ) {
+		$invitations = wp_list_filter( $invitations, $filters );
+	}
+
+	// Sort the results if necessary.
+	if ( in_array( $r['orderby'], array( 'component_name', 'component_action', 'item_id', 'secondary_item_id' ) ) ) {
+		$invitations = bp_sort_by_key( $invitations, $r['orderby'] );
+	}
+
+	// By default, results are ordered ASC.
+	if ( 'DESC' === strtoupper( $r['order'] ) ) {
+		// `true` to preserve keys.
+		$invitations = array_reverse( $invitations, true );
+	}
+
 	// @TODO: document filter hook
-	return apply_filters( 'bp_invitations_get_all_from_user', $invitations, $inviter_id );
+	return apply_filters( 'bp_get_user_invitations', $invitations, $user_id, $args );
 }
 
 /** Update ********************************************************************/
@@ -506,7 +574,7 @@ function bp_invitations_delete_invitation_by_id( $id ) {
  * }
  * @return int|false Number of rows deleted on success, false on failure.
  */
-function bp_invitations_delete_invitation( $args ) {
+function bp_invitations_delete_invitations( $args ) {
 	//@TODO: access check
 	return BP_Invitations_Invitation::delete( $args );
 }

@@ -153,6 +153,30 @@ class BP_Groups_Group {
 	public $args;
 
 	/**
+	 * The component name used for the invitations integration.
+	 *
+	 * @since BuddyPress (2.3.0)
+	 * @var string
+	 */
+	public $invites_component_name;
+
+	/**
+	 * The component action used for group invitations.
+	 *
+	 * @since BuddyPress (2.3.0)
+	 * @var string
+	 */
+	public $invites_component_action;
+
+	/**
+	 * The component action used for membership requests.
+	 *
+	 * @since BuddyPress (2.3.0)
+	 * @var string
+	 */
+	public $requests_component_action;
+
+	/**
 	 * Constructor method.
 	 *
 	 * @param int|null $id Optional. If the ID of an existing group is provided,
@@ -173,6 +197,11 @@ class BP_Groups_Group {
 			$this->id = $id;
 			$this->populate();
 		}
+
+		// Set invitation integration variables.
+		$this->invites_component_name    = 'bp_groups';
+		$this->invites_component_action  = 'bp_groups_invitation';
+		$this->requests_component_action = 'bp_groups_request';
 	}
 
 	/**
@@ -455,16 +484,66 @@ class BP_Groups_Group {
 	 *
 	 * @param int $user_id ID of the inviting user.
 	 * @param int $group_id ID of the group.
-	 *
-	 * @return array IDs of users who have been invited to the group by the
-	 *               user but have not yet accepted.
+	 * @return array IDs or email addresses of users who have been invited to
+	 *               the group by the user but have not yet accepted.
 	 */
 	public static function get_invites( $user_id, $group_id ) {
-		global $wpdb;
+		$invited_users = array();
+		$args = array(
+			'component_name'   => $this->invites_component_name,
+			'component_action' => $this->invites_component_action,
+			'item_id'          => $group_id,
+			);
+		$invitations = bp_get_invitations_from_user( $user_id, $args );
 
-		$bp = buddypress();
+		if ( ! empty( $invitations ) ) {
+			foreach ( $invitations as $invitation ) {
+				// Populate the array with user IDs or emails
+				if ( $invitation->user_id ) {
+					$invited_users[] = $invitation->user_id;
+				} elseif ( ! empty( $invitation->invitee_email ) ) {
+					$invited_users[] = $invitation->invitee_email;
+				}
+			}
+		}
+		return $invited_users;
+	}
 
-		return $wpdb->get_col( $wpdb->prepare( "SELECT user_id FROM {$bp->groups->table_name_members} WHERE group_id = %d and is_confirmed = 0 AND inviter_id = %d", $group_id, $user_id ) );
+	/**
+	 * Get (full) outstanding invites to a given group from a specified userr.
+	 *
+	 * @param int $user_id ID of the invitee.
+	 * @param int $group_id ID of the group.
+	 * @param int $limit Optional. Max number of results to return.
+	 *        Default: false (no limit).
+	 * @param int $page Optional. Page offset of results to return.
+	 *        Default: false (no limit).
+	 * @param string|array $exclude Optional. Array or comma-separated list
+	 *        of group IDs to exclude from results.
+	 * @return array {
+	 *     @type array $invitations Array of invitations returned by paged filter.
+	 *     @type int $total_invites Count of invitations matching arguments.
+	 * }
+	 */
+	public static function get_invites_from_user( $user_id, $group_id, $limit = false, $page = false ) {
+		$args = array(
+			'component_name'   => $this->invites_component_name,
+			'component_action' => $this->invites_component_action,
+			'type'             => 'invite',
+			'item_id'          => $item_id,
+			);
+		$invitations = bp_get_invitations_from_user( $user_id, $args );
+
+		$total_invites = count( $group_ids );
+
+		// Paginate the results if necessary
+		if ( ! empty( $limit ) && ! empty( $page ) ) {
+			$offset = ( $page - 1 ) * $limit;
+			$invitations = array_slice( $invitations, intval( $offset ), intval( $limit ) );
+		}
+
+		// Return in a format similar to BP_Group_Member_Query
+		return array( 'results' => $invitations, 'total_users' => $total_invites );
 	}
 
 	/**
@@ -639,18 +718,41 @@ class BP_Groups_Group {
 	 * }
 	 */
 	public static function get_membership_requests( $group_id, $limit = null, $page = null ) {
-		global $wpdb;
+		// global $wpdb;
 
-		if ( !empty( $limit ) && !empty( $page ) ) {
-			$pag_sql = $wpdb->prepare( " LIMIT %d, %d", intval( ( $page - 1 ) * $limit), intval( $limit ) );
+		// if ( !empty( $limit ) && !empty( $page ) ) {
+		// 	$pag_sql = $wpdb->prepare( " LIMIT %d, %d", intval( ( $page - 1 ) * $limit), intval( $limit ) );
+		// }
+
+		// $bp = buddypress();
+
+		// $paged_requests = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$bp->groups->table_name_members} WHERE group_id = %d AND is_confirmed = 0 AND inviter_id = 0{$pag_sql}", $group_id ) );
+		// $total_requests = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM {$bp->groups->table_name_members} WHERE group_id = %d AND is_confirmed = 0 AND inviter_id = 0", $group_id ) );
+
+		// return array( 'requests' => $paged_requests, 'total' => $total_requests );
+
+		// Get invitations out of the cache, or query if necessary
+		$requests = wp_cache_get( 'all_from_group_' . $group_id, 'bp_invitations' );
+		if ( false === $requests ) {
+			$args = array(
+				'component_name'   => $this->invites_component_name,
+				'component_action' => $this->requests_component_action,
+				'item_id'          => $group_id,
+				'type'             => 'request',
+				);
+			$requests = BP_Invitations_Invitation::get( $args );
+			wp_cache_set( 'all_from_group_' . $group_id, $requests, 'bp_$invitations' );
 		}
 
-		$bp = buddypress();
+		$total_requests = count( $requests );
 
-		$paged_requests = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$bp->groups->table_name_members} WHERE group_id = %d AND is_confirmed = 0 AND inviter_id = 0{$pag_sql}", $group_id ) );
-		$total_requests = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM {$bp->groups->table_name_members} WHERE group_id = %d AND is_confirmed = 0 AND inviter_id = 0", $group_id ) );
+		// Paginate the results if necessary
+		if ( ! empty( $limit ) && ! empty( $page ) ) {
+			$offset = ( $page - 1 ) * $limit;
+			$requests = array_slice( $requests, intval( $offset ), intval( $limit ) );
+		}
 
-		return array( 'requests' => $paged_requests, 'total' => $total_requests );
+		return array( 'requests' => $requests, 'total' => $total_requests );
 	}
 
 	/**
@@ -1446,11 +1548,18 @@ class BP_Groups_Group {
 	 *                  failure.
 	 */
 	public static function delete_all_invites( $group_id ) {
-		global $wpdb;
+		// global $wpdb;
 
-		$bp = buddypress();
+		// $bp = buddypress();
 
-		return $wpdb->query( $wpdb->prepare( "DELETE FROM {$bp->groups->table_name_members} WHERE group_id = %d AND invite_sent = 1", $group_id ) );
+		// return $wpdb->query( $wpdb->prepare( "DELETE FROM {$bp->groups->table_name_members} WHERE group_id = %d AND invite_sent = 1", $group_id ) );
+		$args = array(
+			'component_name'   => $this->invites_component_name,
+			'component_action' => $this->invites_component_action,
+			'item_id'          => $group_id,
+			'type'             => 'invite',
+		);
+		return bp_invitations_delete_invitations( $args );
 	}
 
 	/**

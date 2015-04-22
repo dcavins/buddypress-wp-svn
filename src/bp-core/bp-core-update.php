@@ -473,7 +473,8 @@ function bp_update_to_2_2() {
 /**
  * 2.3.0 update routine.
  *
- * - Add notifications meta table.
+ * - Add notifications meta table
+ * - Add invitations table and migrate group invitations
  *
  * @since BuddyPress (2.3.0)
  */
@@ -483,6 +484,9 @@ function bp_update_to_2_3() {
 	if ( bp_is_active( 'notifications' ) ) {
 		bp_core_install_notifications();
 	}
+
+	bp_core_install_invitations();
+
 }
 
 /**

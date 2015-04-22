@@ -261,7 +261,7 @@ class BP_Invitations_Invitation {
 	 *                  component.
 	 * 	   @type int    $secondary_item_id secondary ID associated with the
 	 *			        invitation and component.
-	 * 	   @type string $type Invitation or request.
+	 * 	   @type string $type Invite or request.
 	 *     @type string $content Extra information provided by the requester
 	 *			        or inviter.
 	 * 	   @type string $date_modified Date the invitation was last modified.
@@ -676,11 +676,6 @@ class BP_Invitations_Invitation {
 	 *                        array of user IDs.
 	 *     @type int|array    $inviter_id ID of user who created the
 	 *                        invitation. Can be an array of user IDs.
-	 *                        Special cases
-	 *     @type string       $type Type of item. An "invite" is sent from one
-	 *                        user to another. A "request" is submitted by a
-	 *                        user and no inviter is required.
-	 *                        Default: 'invite'.
 	 *     @type string|array $invitee_email Email address of invited users
 	 *			              being queried. Can be an array of addresses.
 	 *     @type string|array $component_name Name of the component to
@@ -691,7 +686,9 @@ class BP_Invitations_Invitation {
 	 *                        of multiple item IDs.
 	 *     @type int|array    $secondary_item_id ID of secondary associated
 	 *                        item. Can be an array of multiple IDs.
- 	 *     @type string|array $type Invite or request.
+	 *     @type string       $type Type of item. An "invite" is sent from one
+	 *                        user to another. A "request" is submitted by a
+	 *                        user and no inviter is required.
 	 *     @type string       $invite_sent Limit to draft, sent or all
 	 *                        invitations. 'draft' returns only unsent
 	 *                        invitations, 'sent' returns only sent
