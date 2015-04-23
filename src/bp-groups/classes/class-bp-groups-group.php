@@ -153,30 +153,6 @@ class BP_Groups_Group {
 	public $args;
 
 	/**
-	 * The component name used for the invitations integration.
-	 *
-	 * @since BuddyPress (2.3.0)
-	 * @var string
-	 */
-	public $invites_component_name;
-
-	/**
-	 * The component action used for group invitations.
-	 *
-	 * @since BuddyPress (2.3.0)
-	 * @var string
-	 */
-	public $invites_component_action;
-
-	/**
-	 * The component action used for membership requests.
-	 *
-	 * @since BuddyPress (2.3.0)
-	 * @var string
-	 */
-	public $requests_component_action;
-
-	/**
 	 * Constructor method.
 	 *
 	 * @param int|null $id Optional. If the ID of an existing group is provided,
@@ -197,11 +173,6 @@ class BP_Groups_Group {
 			$this->id = $id;
 			$this->populate();
 		}
-
-		// Set invitation integration variables.
-		$this->invites_component_name    = 'bp_groups';
-		$this->invites_component_action  = 'bp_groups_invitation';
-		$this->requests_component_action = 'bp_groups_request';
 	}
 
 	/**
@@ -489,9 +460,10 @@ class BP_Groups_Group {
 	 */
 	public static function get_invites( $user_id, $group_id ) {
 		$invited_users = array();
+		$bp = buddypress();
 		$args = array(
-			'component_name'   => $this->invites_component_name,
-			'component_action' => $this->invites_component_action,
+			'component_name'   => $bp->groups->id,
+			'component_action' => $bp->groups->id . '_invitation',
 			'item_id'          => $group_id,
 			);
 		$invitations = bp_get_invitations_from_user( $user_id, $args );
@@ -526,9 +498,10 @@ class BP_Groups_Group {
 	 * }
 	 */
 	public static function get_invites_from_user( $user_id, $group_id, $limit = false, $page = false ) {
+		$bp = buddypress();
 		$args = array(
-			'component_name'   => $this->invites_component_name,
-			'component_action' => $this->invites_component_action,
+			'component_name'   => $bp->groups->id,
+			'component_action' => $bp->groups->id . '_invitation',
 			'type'             => 'invite',
 			'item_id'          => $item_id,
 			);
@@ -734,9 +707,10 @@ class BP_Groups_Group {
 		// Get invitations out of the cache, or query if necessary
 		$requests = wp_cache_get( 'all_from_group_' . $group_id, 'bp_invitations' );
 		if ( false === $requests ) {
+			$bp = buddypress();
 			$args = array(
-				'component_name'   => $this->invites_component_name,
-				'component_action' => $this->requests_component_action,
+				'component_name'   => $bp->groups->id,
+				'component_action' => $bp->groups->id . '_invitation',
 				'item_id'          => $group_id,
 				'type'             => 'request',
 				);
@@ -1550,12 +1524,13 @@ class BP_Groups_Group {
 	public static function delete_all_invites( $group_id ) {
 		// global $wpdb;
 
-		// $bp = buddypress();
+		$bp = buddypress();
 
 		// return $wpdb->query( $wpdb->prepare( "DELETE FROM {$bp->groups->table_name_members} WHERE group_id = %d AND invite_sent = 1", $group_id ) );
+
 		$args = array(
-			'component_name'   => $this->invites_component_name,
-			'component_action' => $this->invites_component_action,
+			'component_name'   => $bp->groups->id,
+			'component_action' => $bp->groups->id . '_invitation',
 			'item_id'          => $group_id,
 			'type'             => 'invite',
 		);

@@ -527,8 +527,9 @@ function bp_core_upgrade_signups() {
 }
 
 /* Invitations ****************************************************************/
+
 /**
- * Install database tables for the Invitations component
+ * Install database tables for the Invitations API
  *
  * @since BuddyPress (2.3.0)
  *
@@ -537,38 +538,30 @@ function bp_core_upgrade_signups() {
  * @uses dbDelta()
  */
 function bp_core_install_invitations() {
-	// $sql             = array();
-	// $charset_collate = bp_core_set_charset();
-	// $bp_prefix       = bp_core_get_table_prefix();
-
-	// $sql[] = "CREATE TABLE {$bp_prefix}bp_notifications (
-	// 			id bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-	// 			user_id bigint(20) NOT NULL,
-	// 			item_id bigint(20) NOT NULL,
-	// 			secondary_item_id bigint(20),
-	// 			component_name varchar(75) NOT NULL,
-	// 			component_action varchar(75) NOT NULL,
-	// 			date_notified datetime NOT NULL,
-	// 			is_new bool NOT NULL DEFAULT 0,
-	// 			KEY item_id (item_id),
-	// 			KEY secondary_item_id (secondary_item_id),
-	// 			KEY user_id (user_id),
-	// 			KEY is_new (is_new),
-	// 			KEY component_name (component_name),
-	// 			KEY component_action (component_action),
-	// 			KEY useritem (user_id,is_new)
-	// 		) {$charset_collate};";
-
-	// $sql[] = "CREATE TABLE {$bp_prefix}bp_notifications_meta (
-	// 			id bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-	// 			notification_id bigint(20) NOT NULL,
-	// 			meta_key varchar(255) DEFAULT NULL,
-	// 			meta_value longtext DEFAULT NULL,
-	// 			KEY notification_id (notification_id),
-	// 			KEY meta_key (meta_key(191))
-	// 		) {$charset_collate};";
-
-	// dbDelta( $sql );
-
-	// Migrate existing group invitations to new table!
+	$sql             = array();
+	$charset_collate = bp_core_set_charset();
+	$bp_prefix       = bp_core_get_table_prefix();
+	$sql[] = "CREATE TABLE {$bp_prefix}bp_invitations (
+				id bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+				user_id bigint(20) NOT NULL,
+				inviter_id bigint(20) NOT NULL,
+				invitee_email varchar(100) DEFAULT NULL,
+				component_name varchar(75) NOT NULL,
+				component_action varchar(75) NOT NULL,
+				item_id bigint(20) NOT NULL,
+				secondary_item_id bigint(20) DEFAULT NULL,
+				type varchar(12) NOT NULL DEFAULT 'invite',
+				date_modified datetime NOT NULL,
+				invite_sent tinyint(1) NOT NULL DEFAULT '0',
+				KEY user_id (user_id),
+				KEY inviter_id (inviter_id),
+				KEY invitee_email (invitee_email),
+				KEY component_name (component_name),
+				KEY component_action (component_action),
+				KEY item_id (item_id),
+				KEY secondary_item_id (secondary_item_id),
+				KEY type (type),
+				KEY invite_sent (invite_sent)
+				) {$charset_collate};";
+	dbDelta( $sql );
 }

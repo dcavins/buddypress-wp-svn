@@ -545,7 +545,45 @@ function bp_invitations_delete_invitation_by_id( $id ) {
 /**
  * Delete an invitation or invitations by query data.
  *
- * Used when rejecting invitations or membership requests.
+ * Used when declining invitations.
+ *
+ * @since BuddyPress (2.3.0)
+ *
+ * @see bp_invitations_get_invitations() for a description of
+ *      accepted where arguments.
+ *
+ * @param array $args {
+ *     Associative array of arguments. All arguments but $page and
+ *     $per_page can be treated as filter values for get_where_sql()
+ *     and get_query_clauses(). All items are optional.
+ *     @type int|array    $user_id ID of user being queried. Can be an
+ *                        array of user IDs.
+ *     @type int|array    $inviter_id ID of user who created the
+ *                        invitation. Can be an array of user IDs.
+ *                        Special cases
+ *     @type string|array $invitee_email Email address of invited users
+ *			              being queried. Can be an array of addresses.
+ *     @type string|array $component_name Name of the component to
+ *                        filter by. Can be an array of component names.
+ *     @type string|array $component_action Name of the action to
+ *                        filter by. Can be an array of actions.
+ *     @type int|array    $item_id ID of associated item. Can be an array
+ *                        of multiple item IDs.
+ *     @type int|array    $secondary_item_id ID of secondary associated
+ *                        item. Can be an array of multiple IDs.
+ *     @type string       $type Invite or request.
+ * }
+ * @return int|false Number of rows deleted on success, false on failure.
+ */
+function bp_invitations_delete_invitations( $args ) {
+	//@TODO: access check
+	return BP_Invitations_Invitation::delete( $args );
+}
+
+/**
+ * Delete a request or requests by query data.
+ *
+ * Used when rejecting membership requests.
  *
  * @since BuddyPress (2.3.0)
  *
@@ -574,13 +612,14 @@ function bp_invitations_delete_invitation_by_id( $id ) {
  * }
  * @return int|false Number of rows deleted on success, false on failure.
  */
-function bp_invitations_delete_invitations( $args ) {
+function bp_invitations_delete_requests( $args ) {
 	//@TODO: access check
+	$args['type'] = 'request';
 	return BP_Invitations_Invitation::delete( $args );
 }
 
 /**
- * Delete all invitations by type.
+ * Delete all invitations by component.
  *
  * Used when clearing out invitations for an entire component. Possibly used
  * when deactivating a component that created invitations.

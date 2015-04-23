@@ -131,30 +131,6 @@ class BP_Groups_Member {
 	var $user;
 
 	/**
-	 * The component name used for the invitations integration.
-	 *
-	 * @since BuddyPress (2.3.0)
-	 * @var string
-	 */
-	public $invites_component_name;
-
-	/**
-	 * The component action used for group invitations.
-	 *
-	 * @since BuddyPress (2.3.0)
-	 * @var string
-	 */
-	public $invites_component_action;
-
-	/**
-	 * The component action used for membership requests.
-	 *
-	 * @since BuddyPress (2.3.0)
-	 * @var string
-	 */
-	public $requests_component_action;
-
-	/**
 	 * Constructor method.
 	 *
 	 * @param int      $user_id  Optional. Along with $group_id, can be used to
@@ -185,11 +161,6 @@ class BP_Groups_Member {
 				$this->populate();
 			}
 		}
-
-		// Set invitation integration variables.
-		$this->invites_component_name    = 'bp_groups';
-		$this->invites_component_action  = 'bp_groups_invitation';
-		$this->requests_component_action = 'bp_groups_request';
 	}
 
 	/**
@@ -711,9 +682,10 @@ class BP_Groups_Member {
 
 		// return array( 'groups' => $paged_groups, 'total' => self::get_invite_count_for_user( $user_id ) );
 		$group_ids = array();
+		$bp = buddypress();
 		$args = array(
-			'component_name'   => $this->invites_component_name,
-			'component_action' => $this->invites_component_action,
+			'component_name'   => $bp->groups->id,
+			'component_action' => $bp->groups->id . '_invitation',
 			'type'             => 'invite',
 			'invite_sent'      => 'sent',
 			);
@@ -746,7 +718,9 @@ class BP_Groups_Member {
 			$pag_sql = $wpdb->prepare( " LIMIT %d, %d", intval( ( $page - 1 ) * $limit), intval( $limit ) );
 		}
 
-		$paged_groups = $wpdb->get_results( "SELECT g.*, gm1.meta_value as total_member_count, gm2.meta_value as last_activity FROM {$bp->groups->table_name_groupmeta} gm1, {$bp->groups->table_name_groupmeta} gm2, {$bp->groups->table_name} g WHERE g.id = gm1.group_id AND g.id = gm2.group_id AND gm2.meta_key = 'last_activity' AND gm1.meta_key = 'total_member_count' ORDER BY g.name ASC {$pag_sql}" );
+		$group_id_in = implode( ',', $group_ids );
+
+		$paged_groups = $wpdb->get_results( "SELECT g.*, gm1.meta_value as total_member_count, gm2.meta_value as last_activity FROM {$bp->groups->table_name_groupmeta} gm1, {$bp->groups->table_name_groupmeta} gm2, {$bp->groups->table_name} g WHERE g.id = gm1.group_id AND g.id = gm2.group_id AND gm2.meta_key = 'last_activity' AND gm1.meta_key = 'total_member_count' AND g.id IN ({$group_id_in}) ORDER BY g.name ASC {$pag_sql}" );
 
 		return array( 'groups' => $paged_groups, 'total' => $total_invites );
 
@@ -805,10 +779,10 @@ class BP_Groups_Member {
 		if ( ! in_array( $sent, array( 'draft', 'sent', 'all' ) ) ) {
 			$sent = 'sent';
 		}
-
+		$bp = buddypress();
 		$args = array(
-			'component_name'   => $this->invites_component_name,
-			'component_action' => $this->invites_component_action,
+			'component_name'   => $bp->groups->id,
+			'component_action' => $bp->groups->id . '_invitation',
 			'type'             => 'invite',
 			'item_id'          => intval( $group_id ),
 			'invite_sent'      => $sent,
@@ -827,13 +801,13 @@ class BP_Groups_Member {
 	 * Delete an invitation, by specifying user ID and group ID.
 	 *
 	 * @global WPDB $wpdb
-	 *
-	 * @param  int $user_id  ID of the user.
-	 * @param  int $group_id ID of the group.
-	 *
+	 * @param int|string $user_id ID of the user or invitee_email.
+	 * @param int $group_id ID of the group.
+	 * @param int|array $inviter_id Optional. User ID of the user who extended
+	 *                  the invitation. Leave empty to not filter by inviter_id.
 	 * @return int Number of records deleted.
 	 */
-	public static function delete_invite( $user_id, $group_id ) {
+	public static function delete_invite( $user_id, $group_id, $inviter_id = null ) {
 		global $wpdb;
 
 		if ( empty( $user_id ) ) {
@@ -842,15 +816,31 @@ class BP_Groups_Member {
 
 		$table_name = buddypress()->groups->table_name_members;
 
-		$sql = "DELETE FROM {$table_name}
-				WHERE user_id = %d
-					AND group_id = %d
-					AND is_confirmed = 0
-					AND inviter_id != 0";
+		// return $wpdb->query( $wpdb->prepare( "DELETE FROM {$bp->groups->table_name_members} WHERE user_id = %d AND group_id = %d AND is_confirmed = 0 AND inviter_id != 0 AND invite_sent = 1", $user_id, $group_id ) );
+		$bp = buddypress();
+		$args = array(
+			'component_name'   => $bp->groups->id,
+			'component_action' => $bp->groups->id . '_invitation',
+			'type'             => 'invite',
+			'item_id'          => intval( $group_id ),
+		);
 
-		$prepared = $wpdb->prepare( $sql, $user_id, $group_id );
+		if ( ! empty( $inviter_id ) ) {
+			$args['inviter_id'] = $inviter_id;
+		}
 
-		return $wpdb->query( $prepared );
+		if ( is_numeric( $user_id ) ) {
+			$args['user_id'] = $user_id;
+		} elseif ( is_email( $user_id ) ) {
+			$args['invitee_email'] = $user_id;
+ 		}
+
+ 		// Bail if we can't identify the invited user.
+ 		if ( ! isset( $args['user_id'] ) && ! isset( $args['invitee_email'] ) ) {
+ 			return false;
+ 		}
+
+		$retval = bp_invitations_delete_invitations( $args );
 	}
 
 	/**
@@ -862,14 +852,31 @@ class BP_Groups_Member {
 	 * @return int Number of records deleted.
 	 */
 	public static function delete_request( $user_id, $group_id ) {
-		global $wpdb;
-
 		if ( empty( $user_id ) )
 			return false;
 
 		$bp = buddypress();
 
- 		return $wpdb->query( $wpdb->prepare( "DELETE FROM {$bp->groups->table_name_members} WHERE user_id = %d AND group_id = %d AND is_confirmed = 0 AND inviter_id = 0 AND invite_sent = 0", $user_id, $group_id ) );
+ 		// return $wpdb->query( $wpdb->prepare( "DELETE FROM {$bp->groups->table_name_members} WHERE user_id = %d AND group_id = %d AND is_confirmed = 0 AND inviter_id = 0 AND invite_sent = 0", $user_id, $group_id ) );
+
+		$args = array(
+			'component_name'   => $bp->groups->id,
+			'component_action' => $bp->groups->id . '_request',
+			'item_id'          => intval( $group_id ),
+		);
+
+		if ( is_numeric( $user_id ) ) {
+			$args['user_id'] = $user_id;
+		} elseif ( is_email( $user_id ) ) {
+			$args['invitee_email'] = $user_id;
+ 		}
+
+ 		// Bail if we can't identify the invited user.
+ 		if ( ! isset( $args['user_id'] ) && ! isset( $args['invitee_email'] ) ) {
+ 			return false;
+ 		}
+
+		$retval = bp_invitations_delete_requests( $args );
 	}
 
 	/**
@@ -983,7 +990,7 @@ class BP_Groups_Member {
 		// if ( empty( $user_id ) )
 		// 	return false;
 
-		// $bp = buddypress();
+		$bp = buddypress();
 
 		// return $wpdb->query( $wpdb->prepare( "SELECT id FROM {$bp->groups->table_name_members} WHERE user_id = %d AND group_id = %d AND is_confirmed = 0 AND is_banned = 0 AND inviter_id = 0", $user_id, $group_id ) );
 
@@ -992,8 +999,8 @@ class BP_Groups_Member {
 		}
 
 		$args = array(
-			'component_name'   => $this->invites_component_name,
-			'component_action' => $this->requests_component_action,
+			'component_name'   => $bp->groups->id,
+			'component_action' => $bp->groups->id . '_request',
 			'item_id'          => intval( $group_id ),
 		);
 		$requests = bp_get_user_requests( $user_id, $args );
@@ -1089,12 +1096,12 @@ class BP_Groups_Member {
 	public static function get_all_membership_request_user_ids( $group_id ) {
 		// global $wpdb;
 
-		// $bp = buddypress();
+		$bp = buddypress();
 
 		// return $wpdb->get_col( $wpdb->prepare( "SELECT user_id FROM {$bp->groups->table_name_members} WHERE group_id = %d AND is_confirmed = 0 AND inviter_id = 0", $group_id ) );
 		$args = array(
-			'component_name'   => $this->invites_component_name,
-			'component_action' => $this->requests_component_action,
+			'component_name'   => $bp->groups->id,
+			'component_action' => $bp->groups->id . '_request',
 			'item_id'          => intval( $group_id ),
 		);
 		$requests = bp_invitations_get_requests( $args ) ;
