@@ -90,7 +90,7 @@ class BP_Invitations_Invitation {
 
 	/**
 	 * The secondary ID associated with the invitation and component.
-	 * Example: a taxonomy term ID if invited to a site's category-specific RSS feed 
+	 * Example: a taxonomy term ID if invited to a site's category-specific RSS feed
 	 *
 	 * @since BuddyPress (2.3.0)
 	 * @access public
@@ -210,7 +210,8 @@ class BP_Invitations_Invitation {
 		$bp = buddypress();
 
 		// Fetch the invitation
-		$invitation = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$bp->invitations->table_name} WHERE id = %d", $this->id ) );
+		//@TODO: fix table name
+		$invitation = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `wp_bp_invitations` WHERE id = %d", $this->id ) );
 
 		// Set up the invitation data
 		if ( ! empty( $invitation ) && ! is_wp_error( $invitation ) ) {
@@ -242,12 +243,12 @@ class BP_Invitations_Invitation {
 	 * 	   @type string $component_name Name of the related component.
 	 *	   @type string $component_action Name of the related component action.
 	 * 	   @type int item_id ID associated with the invitation and component.
-	 * 	   @type int secondary_item_id secondary ID associated with the 
+	 * 	   @type int secondary_item_id secondary ID associated with the
 	 *			 invitation and component.
-	 * 	   @type string content Extra information provided by the requester 
+	 * 	   @type string content Extra information provided by the requester
 	 *			 or inviter.
 	 * 	   @type string date_modified Date the invitation was last modified.
-	 * 	   @type int invite_sent Has the invitation been sent, or is it a 
+	 * 	   @type int invite_sent Has the invitation been sent, or is it a
 	 *			 draft invite?
 	 * }
 	 * @param array $data_format See {@link wpdb::insert()}.
@@ -545,7 +546,7 @@ class BP_Invitations_Invitation {
 			$where_clauses['data']['user_id'] = absint( $args['user_id'] );
 			$where_clauses['format'][] = '%d';
 		}
-		
+
 		// inviter_id
 		if ( ! empty( $args['inviter_id'] ) ) {
 			$where_clauses['data']['inviter_id'] = absint( $args['inviter_id'] );
@@ -638,8 +639,8 @@ class BP_Invitations_Invitation {
 	 *           of multiple item IDs.
 	 *     @type int|array $secondary_item_id ID of secondary associated
 	 *           item. Can be an array of multiple IDs.
-	 *     @type string $invite_sent Limit to draft, sent or all invitations. 
-	 *			 'draft' returns only unsent invitations, 'sent' returns only 
+	 *     @type string $invite_sent Limit to draft, sent or all invitations.
+	 *			 'draft' returns only unsent invitations, 'sent' returns only
 	 *			 sent invitations, 'all' returns all. Default: 'all'.
 	 *     @type string $search_terms Term to match against component_name
 	 *           or component_action fields.
@@ -852,7 +853,7 @@ class BP_Invitations_Invitation {
 	 *
 	 * @since BuddyPress (2.3.0)
 	 *
-	 * @param int $inviter_id ID of the user whose outgoing invitations are 
+	 * @param int $inviter_id ID of the user whose outgoing invitations are
 	 * 		  being fetched.
 	 * @return array Associative array of outstanding invitations.
 	 */
@@ -868,7 +869,7 @@ class BP_Invitations_Invitation {
 	 *
 	 * @since BuddyPress (2.3.0)
 	 *
-	 * @param int $inviter_id ID of the user whose outgoing invitations are 
+	 * @param int $inviter_id ID of the user whose outgoing invitations are
 	 * 		  being fetched.
 	 * @return array Associative array of unread invitation items.
 	 */
@@ -888,9 +889,9 @@ class BP_Invitations_Invitation {
 	 *     Array of arguments.
 	 *     @type int $user_id ID of the user for whom the invitations are
 	 *           being fetched. Default: logged-in user ID.
-	 *     @type string $invite_sent Limit to draft, sent or all invitations. 
-	 *			 'draft' returns only unsent invitations, 'sent' returns only 
-	 *			 sent invitations, 'all' returns all. Default: 'sent'. 
+	 *     @type string $invite_sent Limit to draft, sent or all invitations.
+	 *			 'draft' returns only unsent invitations, 'sent' returns only
+	 *			 sent invitations, 'all' returns all. Default: 'sent'.
 	 *     @type int $page Number of the page to return. Default: 1.
 	 *     @type int $per_page Number of results to display per page.
 	 *           Default: 10.
@@ -933,9 +934,9 @@ class BP_Invitations_Invitation {
 	 *     Array of arguments.
 	 *     @type int $inviter_id ID of the user for whom the ougoing invitations
 	 *			 are being fetched. Default: logged-in user ID.
-	 *     @type string $invite_sent Limit to draft, sent or all invitations. 
-	 *			 'draft' returns only unsent invitations, 'sent' returns only 
-	 *			 sent invitations, 'all' returns all. Default: 'all'. 
+	 *     @type string $invite_sent Limit to draft, sent or all invitations.
+	 *			 'draft' returns only unsent invitations, 'sent' returns only
+	 *			 sent invitations, 'all' returns all. Default: 'all'.
 	 *     @type int $page Number of the page to return. Default: 1.
 	 *     @type int $per_page Number of results to display per page.
 	 *           Default: 10.
