@@ -489,11 +489,11 @@ class BuddyPress {
 		require( $this->plugin_dir . 'bp-core/bp-core-functions.php'   );
 		require( $this->plugin_dir . 'bp-core/bp-core-moderation.php'  );
 		// Invitations
-		// require( $this->plugin_dir . 'bp-invitations/bp-invitations-classes.php' );
-		// require( $this->plugin_dir . 'bp-invitations/bp-invitations-cache.php' );
-		// require( $this->plugin_dir . 'bp-invitations/bp-invitations-template.php' );
-		// require( $this->plugin_dir . 'bp-core/bp-core-invitations.php' );
-		// require( $this->plugin_dir . 'bp-core/bp-core-loader.php'      );
+		require( $this->plugin_dir . 'bp-invitations/bp-invitations-classes.php' );
+		require( $this->plugin_dir . 'bp-invitations/bp-invitations-cache.php' );
+		require( $this->plugin_dir . 'bp-invitations/bp-invitations-template.php' );
+		require( $this->plugin_dir . 'bp-core/bp-core-invitations.php' );
+		require( $this->plugin_dir . 'bp-core/bp-core-loader.php'      );
 
 		// Skip or load deprecated content
 		if ( false !== $this->load_deprecated ) {
