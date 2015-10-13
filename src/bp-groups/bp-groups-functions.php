@@ -1232,21 +1232,37 @@ function groups_delete_invite( $user_id, $group_id ) {
  */
 function groups_send_invites( $user_id, $group_id ) {
 
-	if ( empty( $user_id ) )
+	if ( empty( $user_id ) ) {
 		$user_id = bp_loggedin_user_id();
+	}
+	if ( empty( $group_id ) ) {
+		$group_id = bp_get_current_group_id();
+	}
+
+	// If the inviter can't extend invitations to this group, bail.
+ 	if ( ! bp_groups_user_can_send_invites( $group_id, $user_id ) ) {
+ 		return false;
+	}
 
 	// Send friend invites.
 	$invited_users = groups_get_invites_for_group( $user_id, $group_id );
 	$group = groups_get_group( array( 'group_id' => $group_id ) );
 
-	for ( $i = 0, $count = count( $invited_users ); $i < $count; ++$i ) {
-		$member = new BP_Groups_Member( $invited_users[$i], $group_id );
+	// Get outstanding invites to the group from this user.
+	$invited_users = groups_get_invites_for_group( $user_id, $group_id );
+	$success = 0;
 
-		// Send the actual invite
-		groups_notification_group_invites( $group, $member, $user_id );
+	foreach ( $invited_users as $invitee_id ) {
+		if ( groups_send_invite_by_invitee( $group_id, $invitee_id, $user_id, $resend = false ) ) {
+			$success++;
+		}
+	}
 
-		$member->invite_sent = 1;
-		$member->save();
+    // If all invitations were successfully sent, return success.
+	if ( count( $invited_users ) == $success ) {
+		return true;
+	} else {
+		return false;
 	}
 
 	/**
@@ -1259,6 +1275,53 @@ function groups_send_invites( $user_id, $group_id ) {
 	 */
 	do_action( 'groups_send_invites', $group_id, $invited_users );
 }
+
+/**
+ * Send specific pending group invitations keyed by group and invitee id
+ *
+ * @param int 	$group_id 	ID of the group.
+ * @param int 	$invitee_id ID of the invited user.
+ * @param int 	$inviter_id ID of the user who created the invitation.
+ * @param bool 	$resend 	Whether to resend notification email if already sent.
+ *
+ * @since BuddyPress (2.2.0)
+ */
+function groups_send_invite_by_invitee( $group_id, $invitee_id, $inviter_id, $resend = false ) {
+
+	if ( empty( $group_id ) || empty( $invitee_id ) || empty( $inviter_id ) ) {
+		return false;
+	}
+
+	// Check that an invitation exists for this user/group combination.
+	// $type = 'all' checks for sent or unsent invitations.
+	// @TODO: If #5911 is adopted, add $inviter_id argument.
+	if ( ! groups_check_user_has_invite( $invitee_id, $group_id, $type = 'all' ) ) {
+		return false;
+	}
+
+	$group = groups_get_group( array( 'group_id' => $group_id ) );
+	$member = new BP_Groups_Member( $invitee_id, $group_id );
+
+	// Send the invitation email.
+	$sent = groups_notification_group_invites( $group, $member, $inviter_id, $resend );
+	// Save the invite_sent property if applicable.
+	$saved = false;
+
+	if ( $sent ) {
+		if ( ! empty( $member->invite_sent ) ) {
+			// Nothing to update
+			$saved = true;
+		} else {
+			$member->invite_sent = 1;
+			$saved = $member->save();
+		}
+	}
+
+	do_action( 'groups_send_single_invite', $group_id, $invitee_id, $inviter_id );
+
+	$success = ( $sent && $saved ) ? true : false;
+	return $success;
+ }
 
 /**
  * Get IDs of users with outstanding invites to a given group from a specified user.
