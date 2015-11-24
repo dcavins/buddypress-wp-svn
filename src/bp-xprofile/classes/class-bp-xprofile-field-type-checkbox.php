@@ -104,6 +104,14 @@ class BP_XProfile_Field_Type_Checkbox extends BP_XProfile_Field_Type {
 	public function edit_field_options_html( array $args = array() ) {
 		$options       = $this->field_obj->get_children();
 		$option_values = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $this->field_obj->id, $args['user_id'] ) );
+
+		// Differentiate null values.
+		// If the user has specifically chosen none of the options, $option_value will be an empty array.
+		// If the user has no saved value for this field, $option_value will be an empty string.
+		$user_has_saved_value = true;
+		if ( empty( $option_values ) && ! is_array( $option_values ) ) {
+			$user_has_saved_value = false;
+		}
 		$option_values = ( $option_values ) ? (array) $option_values : array();
 
 		$html = '';
@@ -134,7 +142,7 @@ class BP_XProfile_Field_Type_Checkbox extends BP_XProfile_Field_Type {
 
 			// If the user has not yet supplied a value for this field, check to
 			// see whether there is a default value available.
-			if ( empty( $option_values ) && empty( $selected ) && ! empty( $options[$k]->is_default_option ) ) {
+			if ( ! $user_has_saved_value && empty( $selected ) && ! empty( $options[$k]->is_default_option ) ) {
 				$selected = ' checked="checked"';
 			}
 
