@@ -18,7 +18,7 @@ if ( !defined( 'ABSPATH' ) ) {
 /** Create ********************************************************************/
 
 /**
- * Add an invitation to a specific user, from a specific user, related to a 
+ * Add an invitation to a specific user, from a specific user, related to a
  * specific component.
  *
  * @since BuddyPress (2.3.0)
@@ -31,12 +31,12 @@ if ( !defined( 'ABSPATH' ) ) {
  * 	   @type string $component_name Name of the related component.
  *	   @type string $component_action Name of the related component action.
  * 	   @type int item_id ID associated with the invitation and component.
- * 	   @type int secondary_item_id secondary ID associated with the 
+ * 	   @type int secondary_item_id secondary ID associated with the
  *			 invitation and component.
- * 	   @type string content Extra information provided by the requester 
+ * 	   @type string content Extra information provided by the requester
  *			 or inviter.
  * 	   @type string date_modified Date the invitation was last modified.
- * 	   @type int invite_sent Has the invitation been sent, or is it a 
+ * 	   @type int invite_sent Has the invitation been sent, or is it a
  *			 draft invite?
  * }
  * @return int|bool ID of the newly created invitation on success, false
@@ -68,18 +68,18 @@ function bp_invitations_add_invitation( $args = array() ) {
 		 *
 		 * @since BuddyPress (2.3.0)
 		 *
-		 * @param array $r Describes the invitation to be added. 
+		 * @param array $r Describes the invitation to be added.
 		 */
 		if ( ! apply_filters( 'bp_invitations_inviter_can_send_invites', true, $r ) ) {
 			return false;
 		}
 	} else {
 		/**
-		 * In the case of a request, is the item accepting requests? 
+		 * In the case of a request, is the item accepting requests?
 		 *
 		 * @since BuddyPress (2.3.0)
 		 *
-		 * @param array $r Describes the invitation to be added. 
+		 * @param array $r Describes the invitation to be added.
 		 */
 		if ( ! apply_filters( 'bp_invitations_item_is_accepting_requests', true, $r ) ) {
 			return false;
@@ -100,7 +100,7 @@ function bp_invitations_add_invitation( $args = array() ) {
 	if ( ! empty( $existing ) ) {
 		return false;
 	}
-	
+
 	// Set up the new invitation
 	$invitation                    = new BP_Invitations_Invitation;
 	$invitation->user_id           = $r['user_id'];
@@ -157,8 +157,8 @@ function bp_invitations_get_invitation_by_id( $id ) {
  *           of multiple item IDs.
  *     @type int|array $secondary_item_id ID of secondary associated
  *           item. Can be an array of multiple IDs.
- *     @type string $invite_sent Limit to draft, sent or all invitations. 
- *			 'draft' returns only unsent invitations, 'sent' returns only 
+ *     @type string $invite_sent Limit to draft, sent or all invitations.
+ *			 'draft' returns only unsent invitations, 'sent' returns only
  *			 sent invitations, 'all' returns all. Default: 'all'.
  *     @type string $search_terms Term to match against component_name
  *           or component_action fields.
@@ -182,7 +182,7 @@ function bp_invitations_get_invitations( $args ) {
  *
  * @since BuddyPress (2.3.0)
  *
- * @param int $user_id ID of the user whose incoming invitations are being 
+ * @param int $user_id ID of the user whose incoming invitations are being
  * 		  fetched.
  * @return array Located invitations.
  */
@@ -211,7 +211,7 @@ function bp_invitations_get_incoming_invitations_for_user( $user_id = 0 ) {
  *
  * @since BuddyPress (2.3.0)
  *
- * @param int $user_id ID of the user whose incoming invitations are being 
+ * @param int $user_id ID of the user whose incoming invitations are being
  * 		  fetched.
  * @return array Located invitations.
  */
@@ -279,7 +279,7 @@ function bp_invitations_mark_as_sent( $id ) {
 /**
  * Delete a specific invitation by its ID.
  *
- * Used when rejecting invitations or membership requests. 
+ * Used when rejecting invitations or membership requests.
  *
  * @since BuddyPress (2.3.0)
  *
