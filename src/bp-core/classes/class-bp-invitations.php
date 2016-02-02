@@ -229,17 +229,17 @@ class BP_Invitations_Invitation {
 
 		// Set up the invitation data
 		if ( ! empty( $invitation ) && ! is_wp_error( $invitation ) ) {
-			$this->user_id          	= $invitation->user_id,
-			$this->inviter_id			= $invitation->inviter_id,
-			$this->invitee_email		= $invitation->invitee_email,
-			$this->component_name    	= $invitation->component_name,
-			$this->component_action  	= $invitation->component_action,
-			$this->item_id           	= $invitation->item_id,
-			$this->secondary_item_id 	= $invitation->secondary_item_id,
-			$this->type                 = $invitation->type,
-			$this->content				= $invitation->content,
-			$this->date_modified     	= $invitation->date_modified,
-			$this->invite_sent       	= $invitation->invite_sent,
+			$this->user_id          	= $invitation->user_id;
+			$this->inviter_id			= $invitation->inviter_id;
+			$this->invitee_email		= $invitation->invitee_email;
+			$this->component_name    	= $invitation->component_name;
+			$this->component_action  	= $invitation->component_action;
+			$this->item_id           	= $invitation->item_id;
+			$this->secondary_item_id 	= $invitation->secondary_item_id;
+			$this->type                 = $invitation->type;
+			$this->content				= $invitation->content;
+			$this->date_modified     	= $invitation->date_modified;
+			$this->invite_sent       	= $invitation->invite_sent;
 		}
 	}
 

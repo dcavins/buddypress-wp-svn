@@ -11,7 +11,7 @@
  */
 
 // Exit if accessed directly
-if ( ! defined( 'ABSPATH' ) ) { 
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -45,8 +45,8 @@ class BP_Invitations_Component extends BP_Component {
 	public function includes( $includes = array() ) {
 		$includes = array(
 			// 'actions',
-			'classes',
-			'screens',
+			// 'classes',
+			// 'screens',
 			// 'adminbar',
 			// 'template',
 			// 'functions',
