@@ -67,7 +67,7 @@ class BP_Invitations_Component extends BP_Component {
 	 */
 	public function setup_globals( $args = array() ) {
 		// Define a slug, if necessary
-		if ( !defined( 'BP_INVITATIONS_SLUG' ) ) {
+		if ( ! defined( 'BP_INVITATIONS_SLUG' ) ) {
 			define( 'BP_INVITATIONS_SLUG', $this->id );
 		}
 
@@ -102,60 +102,60 @@ class BP_Invitations_Component extends BP_Component {
 	 */
 	public function setup_nav( $main_nav = array(), $sub_nav = array() ) {
 
-		// Only grab count if we're on a user page and current user has access
-		if ( bp_is_user() && bp_user_has_access() ) {
-			$count    = bp_invitations_get_incoming_invitation_count( bp_displayed_user_id() );
-			$class    = ( 0 === $count ) ? 'no-count' : 'count';
-			$nav_name = sprintf( _x( 'Invitations <span class="%s">%s</span>', 'Profile screen nav', 'buddypress' ), esc_attr( $class ), number_format_i18n( $count ) );
-		} else {
-			$nav_name = _x( 'Invitations', 'Profile screen nav', 'buddypress' );
-		}
-
-		// Add 'Notifications' to the main navigation
-		$main_nav = array(
-			'name'                    => $nav_name,
-			'slug'                    => $this->slug,
-			'position'                => 30,
-			'show_for_displayed_user' => bp_core_can_edit_settings(),
-			'screen_function'         => 'bp_invitations_screen_incoming',
-			'default_subnav_slug'     => 'unread',
-			'item_css_id'             => $this->id,
-		);
-
-		// Determine user to use
-		if ( bp_displayed_user_domain() ) {
-			$user_domain = bp_displayed_user_domain();
-		} elseif ( bp_loggedin_user_domain() ) {
-			$user_domain = bp_loggedin_user_domain();
-		} else {
-			return;
-		}
-
-		$invitations_link = trailingslashit( $user_domain . bp_get_invitations_slug() );
-
-		// Add the subnav items to the invitations nav item
-		$sub_nav[] = array(
-			'name'            => _x( 'Unread', 'Notification screen nav', 'buddypress' ),
-			'slug'            => 'unread',
-			'parent_url'      => $invitations_link,
-			'parent_slug'     => bp_get_invitations_slug(),
-			'screen_function' => 'bp_invitations_screen_unread',
-			'position'        => 10,
-			'item_css_id'     => 'invitations-my-invitations',
-			'user_has_access' => bp_core_can_edit_settings(),
-		);
-
-		$sub_nav[] = array(
-			'name'            => _x( 'Read', 'Notification screen nav', 'buddypress' ),
-			'slug'            => 'read',
-			'parent_url'      => $invitations_link,
-			'parent_slug'     => bp_get_invitations_slug(),
-			'screen_function' => 'bp_invitations_screen_read',
-			'position'        => 20,
-			'user_has_access' => bp_core_can_edit_settings(),
-		);
-
-		parent::setup_nav( $main_nav, $sub_nav );
+		// // Only grab count if we're on a user page and current user has access
+		// if ( bp_is_user() && bp_user_has_access() ) {
+		// 	$count    = bp_invitations_get_incoming_invitation_count( bp_displayed_user_id() );
+		// 	$class    = ( 0 === $count ) ? 'no-count' : 'count';
+		// 	$nav_name = sprintf( _x( 'Invitations <span class="%s">%s</span>', 'Profile screen nav', 'buddypress' ), esc_attr( $class ), number_format_i18n( $count ) );
+		// } else {
+		// 	$nav_name = _x( 'Invitations', 'Profile screen nav', 'buddypress' );
+		// }
+		//
+		// // Add 'Notifications' to the main navigation
+		// $main_nav = array(
+		// 	'name'                    => $nav_name,
+		// 	'slug'                    => $this->slug,
+		// 	'position'                => 30,
+		// 	'show_for_displayed_user' => bp_core_can_edit_settings(),
+		// 	'screen_function'         => 'bp_invitations_screen_incoming',
+		// 	'default_subnav_slug'     => 'unread',
+		// 	'item_css_id'             => $this->id,
+		// );
+		//
+		// // Determine user to use
+		// if ( bp_displayed_user_domain() ) {
+		// 	$user_domain = bp_displayed_user_domain();
+		// } elseif ( bp_loggedin_user_domain() ) {
+		// 	$user_domain = bp_loggedin_user_domain();
+		// } else {
+		// 	return;
+		// }
+		//
+		// $invitations_link = trailingslashit( $user_domain . bp_get_invitations_slug() );
+		//
+		// // Add the subnav items to the invitations nav item
+		// $sub_nav[] = array(
+		// 	'name'            => _x( 'Unread', 'Notification screen nav', 'buddypress' ),
+		// 	'slug'            => 'unread',
+		// 	'parent_url'      => $invitations_link,
+		// 	'parent_slug'     => bp_get_invitations_slug(),
+		// 	'screen_function' => 'bp_invitations_screen_unread',
+		// 	'position'        => 10,
+		// 	'item_css_id'     => 'invitations-my-invitations',
+		// 	'user_has_access' => bp_core_can_edit_settings(),
+		// );
+		//
+		// $sub_nav[] = array(
+		// 	'name'            => _x( 'Read', 'Notification screen nav', 'buddypress' ),
+		// 	'slug'            => 'read',
+		// 	'parent_url'      => $invitations_link,
+		// 	'parent_slug'     => bp_get_invitations_slug(),
+		// 	'screen_function' => 'bp_invitations_screen_read',
+		// 	'position'        => 20,
+		// 	'user_has_access' => bp_core_can_edit_settings(),
+		// );
+		//
+		// parent::setup_nav( $main_nav, $sub_nav );
 	}
 
 	/**
@@ -171,48 +171,48 @@ class BP_Invitations_Component extends BP_Component {
 	 */
 	public function setup_admin_bar( $wp_admin_nav = array() ) {
 
-		// Menus for logged in user
-		if ( is_user_logged_in() ) {
-
-			// Setup the logged in user variables
-			$invitations_link = trailingslashit( bp_loggedin_user_domain() . $this->slug );
-
-			// Pending notification requests
-			$count = bp_invitations_get_unread_notification_count( bp_loggedin_user_id() );
-			if ( ! empty( $count ) ) {
-				$title  = sprintf( _x( 'Notifications <span class="count">%s</span>', 'My Account Notification pending', 'buddypress' ), number_format_i18n( $count ) );
-				$unread = sprintf( _x( 'Unread <span class="count">%s</span>', 'My Account Notification pending', 'buddypress' ), number_format_i18n( $count ) );
-			} else {
-				$title  = _x( 'Notifications', 'My Account Notification', 'buddypress' );
-				$unread = _x( 'Unread', 'My Account Notification sub nav', 'buddypress' );
-			}
-
-			// Add the "My Account" sub menus
-			$wp_admin_nav[] = array(
-				'parent' => buddypress()->my_account_menu_id,
-				'id'     => 'my-account-' . $this->id,
-				'title'  => $title,
-				'href'   => trailingslashit( $invitations_link ),
-			);
-
-			// Unread
-			$wp_admin_nav[] = array(
-				'parent' => 'my-account-' . $this->id,
-				'id'     => 'my-account-' . $this->id . '-unread',
-				'title'  => $unread,
-				'href'   => trailingslashit( $invitations_link ),
-			);
-
-			// Read
-			$wp_admin_nav[] = array(
-				'parent' => 'my-account-' . $this->id,
-				'id'     => 'my-account-' . $this->id . '-read',
-				'title'  => __( 'Read', 'buddypress' ),
-				'href'   => trailingslashit( $invitations_link . 'read' ),
-			);
-		}
-
-		parent::setup_admin_bar( $wp_admin_nav );
+		// // Menus for logged in user
+		// if ( is_user_logged_in() ) {
+		//
+		// 	// Setup the logged in user variables
+		// 	$invitations_link = trailingslashit( bp_loggedin_user_domain() . $this->slug );
+		//
+		// 	// Pending notification requests
+		// 	$count = bp_invitations_get_unread_notification_count( bp_loggedin_user_id() );
+		// 	if ( ! empty( $count ) ) {
+		// 		$title  = sprintf( _x( 'Notifications <span class="count">%s</span>', 'My Account Notification pending', 'buddypress' ), number_format_i18n( $count ) );
+		// 		$unread = sprintf( _x( 'Unread <span class="count">%s</span>', 'My Account Notification pending', 'buddypress' ), number_format_i18n( $count ) );
+		// 	} else {
+		// 		$title  = _x( 'Notifications', 'My Account Notification', 'buddypress' );
+		// 		$unread = _x( 'Unread', 'My Account Notification sub nav', 'buddypress' );
+		// 	}
+		//
+		// 	// Add the "My Account" sub menus
+		// 	$wp_admin_nav[] = array(
+		// 		'parent' => buddypress()->my_account_menu_id,
+		// 		'id'     => 'my-account-' . $this->id,
+		// 		'title'  => $title,
+		// 		'href'   => trailingslashit( $invitations_link ),
+		// 	);
+		//
+		// 	// Unread
+		// 	$wp_admin_nav[] = array(
+		// 		'parent' => 'my-account-' . $this->id,
+		// 		'id'     => 'my-account-' . $this->id . '-unread',
+		// 		'title'  => $unread,
+		// 		'href'   => trailingslashit( $invitations_link ),
+		// 	);
+		//
+		// 	// Read
+		// 	$wp_admin_nav[] = array(
+		// 		'parent' => 'my-account-' . $this->id,
+		// 		'id'     => 'my-account-' . $this->id . '-read',
+		// 		'title'  => __( 'Read', 'buddypress' ),
+		// 		'href'   => trailingslashit( $invitations_link . 'read' ),
+		// 	);
+		// }
+		//
+		// parent::setup_admin_bar( $wp_admin_nav );
 	}
 
 	/**
@@ -221,32 +221,32 @@ class BP_Invitations_Component extends BP_Component {
 	 * @since BuddyPress (2.3.0)
 	 */
 	public function setup_title() {
-		$bp = buddypress();
-
-		// Adjust title
-		if ( bp_is_invitations_component() ) {
-			if ( bp_is_my_profile() ) {
-				$bp->bp_options_title = __( 'Notifications', 'buddypress' );
-			} else {
-				$bp->bp_options_avatar = bp_core_fetch_avatar( array(
-					'item_id' => bp_displayed_user_id(),
-					'type'    => 'thumb',
-					'alt'     => sprintf( __( 'Profile picture of %s', 'buddypress' ), bp_get_displayed_user_fullname() )
-				) );
-				$bp->bp_options_title = bp_get_displayed_user_fullname();
-			}
-		}
-
-		parent::setup_title();
+		// $bp = buddypress();
+		//
+		// // Adjust title
+		// if ( bp_is_invitations_component() ) {
+		// 	if ( bp_is_my_profile() ) {
+		// 		$bp->bp_options_title = __( 'Notifications', 'buddypress' );
+		// 	} else {
+		// 		$bp->bp_options_avatar = bp_core_fetch_avatar( array(
+		// 			'item_id' => bp_displayed_user_id(),
+		// 			'type'    => 'thumb',
+		// 			'alt'     => sprintf( __( 'Profile picture of %s', 'buddypress' ), bp_get_displayed_user_fullname() )
+		// 		) );
+		// 		$bp->bp_options_title = bp_get_displayed_user_fullname();
+		// 	}
+		// }
+		//
+		// parent::setup_title();
 	}
 }
 
 /**
- * Bootstrap the Notifications component.
+ * Bootstrap the Invitations component.
  *
  * @since BuddyPress (2.3.0)
  */
 function bp_setup_invitations() {
-	buddypress()->invitations = new BP_Notifications_Component();
+	buddypress()->invitations = new BP_Invitations_Component();
 }
 add_action( 'bp_setup_components', 'bp_setup_invitations', 6 );

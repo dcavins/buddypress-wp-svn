@@ -6,7 +6,7 @@
  * Classes used for the Invitations component.
  *
  * @package BuddyPress
- * @subpackage Core
+ * @subpackage InvitationsClasses
  *
  * @since BuddyPress (2.3.0)
  */
@@ -96,16 +96,7 @@ class BP_Invitations_Invitation {
 	 * @access public
 	 * @var int
 	 */
-	public $secondary_item_id;
-
-	/**
-	 * Is this an invitation or request?
-	 *
-	 * @since BuddyPress (2.3.0)
-	 * @access public
-	 * @var string
-	 */
-	public $type;
+	public $secondary_item_id = null;
 
 	/**
 	 * Extra information provided by the requester or inviter.
@@ -141,14 +132,10 @@ class BP_Invitations_Invitation {
 	 *
 	 * @since BuddyPress (2.3.0)
 	 *
-	 * Provide an ID or other identifying information to access an
-	 * existing invitation. At the minimum, a user_id or invitee_email and
-	 * component_name is required if not providing an invitation ID.
-	 *
-	 * @param int $id ID of invitation being accessed.
-	 *
+	 * @param int $id Optional. Provide an ID to access an existing
+	 *        invitation item.
 	 */
-	public function __construct( $id ) {
+	public function __construct( $id = 0 ) {
 		if ( ! empty( $id ) ) {
 			$this->id = $id;
 			$this->populate();
@@ -178,12 +165,11 @@ class BP_Invitations_Invitation {
 			'component_action'  => $this->component_action,
 			'item_id'           => $this->item_id,
 			'secondary_item_id' => $this->secondary_item_id,
-			'type'              => $this->type,
 			'content'			=> $this->content,
 			'date_modified'     => $this->date_modified,
 			'invite_sent'       => $this->invite_sent,
 		);
-		$data_format = array( '%d', '%d', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%s', '%d' );
+		$data_format = array( '%d', '%d', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%d' );
 
 		do_action_ref_array( 'bp_invitation_before_save', array( &$this ) );
 
@@ -201,9 +187,7 @@ class BP_Invitations_Invitation {
 			global $wpdb;
 
 			$this->id = $wpdb->insert_id;
-			if ( $wpdb->insert_id ) {
-				$retval = true;
-			};
+			$retval   = $wpdb->insert_id;
 		}
 
 		do_action_ref_array( 'bp_invitation_after_save', array( &$this ) );
@@ -217,7 +201,7 @@ class BP_Invitations_Invitation {
 	 *
 	 * @since BuddyPress (2.3.0)
 	 *
-	 * @global BuddyPress $bp BuddyPress instance.
+	 * @global BuddyPress $bp The one true BuddyPress instance.
 	 * @global wpdb $wpdb WordPress database object.
 	 */
 	public function populate() {
@@ -225,7 +209,9 @@ class BP_Invitations_Invitation {
 
 		$bp = buddypress();
 
-		$invitation = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$bp->invitations->table_name} WHERE id = %d", $this->id ) );
+		// Fetch the invitation
+		//@TODO: fix table name
+		$invitation = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `wp_bp_invitations` WHERE id = %d", $this->id ) );
 
 		// Set up the invitation data
 		if ( ! empty( $invitation ) && ! is_wp_error( $invitation ) ) {
@@ -236,7 +222,6 @@ class BP_Invitations_Invitation {
 			$this->component_action  	= $invitation->component_action;
 			$this->item_id           	= $invitation->item_id;
 			$this->secondary_item_id 	= $invitation->secondary_item_id;
-			$this->type                 = $invitation->type;
 			$this->content				= $invitation->content;
 			$this->date_modified     	= $invitation->date_modified;
 			$this->invite_sent       	= $invitation->invite_sent;
@@ -250,25 +235,23 @@ class BP_Invitations_Invitation {
 	 *
 	 * @since BuddyPress (2.3.0)
 	 *
-	 * @param array     $data {
+	 * @param array $data {
 	 *     Array of invitation data, passed to {@link wpdb::insert()}.
-	 *	   @type int    $user_id ID of the invited user.
-	 *	   @type int    $inviter_id ID of the user who created the invitation.
+	 *	   @type int $user_id ID of the invited user.
+	 *	   @type int $inviter_id ID of the user who created the invitation.
 	 *	   @type string $invitee_email Email address of the invited user.
 	 * 	   @type string $component_name Name of the related component.
 	 *	   @type string $component_action Name of the related component action.
-	 * 	   @type int    $item_id ID associated with the invitation and
-	 *                  component.
-	 * 	   @type int    $secondary_item_id secondary ID associated with the
-	 *			        invitation and component.
-	 * 	   @type string $type Invite or request.
-	 *     @type string $content Extra information provided by the requester
-	 *			        or inviter.
-	 * 	   @type string $date_modified Date the invitation was last modified.
-	 * 	   @type int    $invite_sent Has the invitation been sent, or is it a
-	 *			        draft invite?
+	 * 	   @type int item_id ID associated with the invitation and component.
+	 * 	   @type int secondary_item_id secondary ID associated with the
+	 *			 invitation and component.
+	 * 	   @type string content Extra information provided by the requester
+	 *			 or inviter.
+	 * 	   @type string date_modified Date the invitation was last modified.
+	 * 	   @type int invite_sent Has the invitation been sent, or is it a
+	 *			 draft invite?
 	 * }
-	 * @param array     $data_format See {@link wpdb::insert()}.
+	 * @param array $data_format See {@link wpdb::insert()}.
 	 * @return int|false The number of rows inserted, or false on error.
 	 */
 	protected static function _insert( $data = array(), $data_format = array() ) {
@@ -284,10 +267,11 @@ class BP_Invitations_Invitation {
 	 * @see wpdb::update() for further description of paramater formats.
 	 *
 	 * @param array $data Array of invitation data to update, passed to
-	 *              {@link wpdb::update()}. Accepts any property of a
-	 *              BP_Invitations object.
+	 *        {@link wpdb::update()}. Accepts any property of a
+	 *        BP_Invitations_Invitation object.
 	 * @param array $where The WHERE params as passed to wpdb::update().
-	 *              Typically consists of array( 'ID' => $id ) to specify the *              ID of the item being updated. See {@link wpdb::update()}.
+	 *        Typically consists of array( 'ID' => $id ) to specify the ID
+	 *        of the item being updated. See {@link wpdb::update()}.
 	 * @param array $data_format See {@link wpdb::insert()}.
 	 * @param array $where_format See {@link wpdb::insert()}.
 	 * @return int|false The number of rows updated, or false on error.
@@ -305,8 +289,8 @@ class BP_Invitations_Invitation {
 	 * @see wpdb::update() for further description of paramater formats.
 	 *
 	 * @param array $where Array of WHERE clauses to filter by, passed to
-	 *              {@link wpdb::delete()}. Accepts any property of a
-	 *              BP_Invitations object.
+	 *        {@link wpdb::delete()}. Accepts any property of a
+	 *        BP_Invitations_Invitation object.
 	 * @param array $where_format See {@link wpdb::insert()}.
 	 * @return int|false The number of rows updated, or false on error.
 	 */
@@ -324,7 +308,7 @@ class BP_Invitations_Invitation {
 	 * @since BuddyPress (2.3.0)
 	 *
 	 * @param array $args See {@link BP_Invitations_Invitation::get()}
-	 *                    for more details.
+	 *        for more details.
 	 * @return string WHERE clause.
 	 */
 	protected static function get_where_sql( $args = array() ) {
@@ -339,25 +323,16 @@ class BP_Invitations_Invitation {
 			$where_conditions['id'] = "id IN ({$id_in})";
 		}
 
-		// user_id - the invitee's id
+		// user_id
 		if ( ! empty( $args['user_id'] ) ) {
 			$user_id_in = implode( ',', wp_parse_id_list( $args['user_id'] ) );
 			$where_conditions['user_id'] = "user_id IN ({$user_id_in})";
 		}
 
-		// 'inviter_id' and 'type' are intertwined.
-		// If 'type' = 'invite', then inviter_ids must be specified or
-		// at least not 0. (An inviter_id of 0 signifies a request.)
-		// If 'type' = 'request', then we specifically look for inviter_id = 0.
-		if ( ! empty( $args['type'] ) && $args['type'] == 'invite' ) {
-			if ( ! empty( $args['inviter_id'] ) ) {
-				$inviter_id_in = implode( ',', wp_parse_id_list( $args['inviter_id'] ) );
-				$where_conditions['inviter_id'] = "inviter_id IN ({$inviter_id_in})";
-			} else {
-				$where_conditions['inviter_id'] = "inviter_id != 0";
-			}
-		} elseif ( ! empty( $args['type'] ) && $args['type'] == 'request' ) {
-				$where_conditions['inviter_id'] = "inviter_id = 0";
+		// inviter_id
+		if ( ! empty( $args['inviter_id'] ) ) {
+			$inviter_id_in = implode( ',', wp_parse_id_list( $args['inviter_id'] ) );
+			$where_conditions['inviter_id'] = "inviter_id IN ({$inviter_id_in})";
 		}
 
 		// invitee_email
@@ -423,27 +398,10 @@ class BP_Invitations_Invitation {
 			$where_conditions['secondary_item_id'] = "secondary_item_id IN ({$secondary_item_id_in})";
 		}
 
-		// type
-		if ( ! empty( $args['type'] ) ) {
-			if ( ! is_array( $args['type'] ) ) {
-				$types = explode( ',', $args['type'] );
-			} else {
-				$types = $args['type'];
-			}
-
-			$type_clean = array();
-			foreach ( $types as $t ) {
-				$type_clean[] = $wpdb->prepare( '%s', $t );
-			}
-
-			$type_in = implode( ',', $type_clean );
-			$where_conditions['type'] = "type IN ({$type_in})";
-		}
-
 		// invite_sent
 		// Only create a where statement if something less than "all" has been
 		// specifically requested.
-		if ( ! empty( $args['invite_sent'] ) && 'all' != $args['invite_sent'] ) {
+		if ( ! empty( $args['invite_sent'] ) && 'all' !== $args['invite_sent'] ) {
 			if ( $args['invite_sent'] == 'draft' ) {
 				$where_conditions['invite_sent'] = "invite_sent = 0";
 			} else if ( $args['invite_sent'] == 'sent' ) {
@@ -474,7 +432,7 @@ class BP_Invitations_Invitation {
 	 * @since BuddyPress (2.3.0)
 	 *
 	 * @param array $args See {@link BP_Invitations_Invitation::get()}
-	 *                    for more details.
+	 *        for more details.
 	 * @return string ORDER BY clause.
 	 */
 	protected static function get_order_by_sql( $args = array() ) {
@@ -511,12 +469,13 @@ class BP_Invitations_Invitation {
 	 * @since BuddyPress (2.3.0)
 	 *
 	 * @param array $args See {@link BP_Invitations_Invitation::get()}
-	 *                    for more details.
+	 *        for more details.
 	 * @return string LIMIT clause.
 	 */
 	protected static function get_paged_sql( $args = array() ) {
 		global $wpdb;
 
+		// Setup local variable
 		$retval = '';
 
 		// Custom LIMIT
@@ -624,12 +583,6 @@ class BP_Invitations_Invitation {
 			$where_clauses['format'][] = '%d';
 		}
 
-		// component_action
-		if ( ! empty( $args['type'] ) ) {
-			$where_clauses['data']['type'] = $args['type'];
-			$where_clauses['format'][] = '%s';
-		}
-
 		// invite_sent
 		// @TODO how to handle. As "draft", "sent" & "all"?
 		if ( isset( $args['invite_sent'] ) ) {
@@ -654,11 +607,11 @@ class BP_Invitations_Invitation {
 	 *         false.
 	 */
 	public static function check_access( $user_id, $invitation_id ) {
-		// global $wpdb;
+		global $wpdb;
 
-		// $bp = buddypress();
+		$bp = buddypress();
 
-		// return $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM {$bp->core->table_name_invitations} WHERE id = %d AND user_id = %d", $invitation_id, $user_id ) );
+		return $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM {$bp->core->table_name_invitations} WHERE id = %d AND user_id = %d", $invitation_id, $user_id ) );
 	}
 
 	/**
@@ -670,39 +623,35 @@ class BP_Invitations_Invitation {
 	 *     Associative array of arguments. All arguments but $page and
 	 *     $per_page can be treated as filter values for get_where_sql()
 	 *     and get_query_clauses(). All items are optional.
-	 *     @type int|array    $id ID of invitation being updated. Can be an
-	 *                        array of IDs.
-	 *     @type int|array    $user_id ID of user being queried. Can be an
-	 *                        array of user IDs.
-	 *     @type int|array    $inviter_id ID of user who created the
-	 *                        invitation. Can be an array of user IDs.
+	 *     @type int|array $id ID of invitation being updated. Can be an
+	 *           array of IDs.
+	 *     @type int|array $user_id ID of user being queried. Can be an
+	 *           array of user IDs.
+	 *     @type int|array $inviter_id ID of user who created the invitation.
+	 *			 Can be an array of user IDs.
 	 *     @type string|array $invitee_email Email address of invited users
-	 *			              being queried. Can be an array of addresses.
+	 *			 being queried. Can be an array of email addresses.
 	 *     @type string|array $component_name Name of the component to
-	 *                        filter by. Can be an array of component names.
+	 *           filter by. Can be an array of component names.
 	 *     @type string|array $component_action Name of the action to
-	 *                        filter by. Can be an array of actions.
-	 *     @type int|array    $item_id ID of associated item. Can be an array
-	 *                        of multiple item IDs.
-	 *     @type int|array    $secondary_item_id ID of secondary associated
-	 *                        item. Can be an array of multiple IDs.
-	 *     @type string       $type Type of item. An "invite" is sent from one
-	 *                        user to another. A "request" is submitted by a
-	 *                        user and no inviter is required.
-	 *     @type string       $invite_sent Limit to draft, sent or all
-	 *                        invitations. 'draft' returns only unsent
-	 *                        invitations, 'sent' returns only sent
-	 *                        invitations, 'all' returns all. Default: 'all'.
-	 *     @type string       $search_terms Term to match against
-	 *                        component_name or component_action fields.
-	 *     @type string       $order_by Database column to order by.
-	 *     @type string       $sort_order Either 'ASC' or 'DESC'.
-	 *     @type string       $order_by Field to order results by.
-	 *     @type string       $sort_order ASC or DESC.
-	 *     @type int          $page Number of the current page of results.
-	 *                        Default: false (no pagination - all items).
-	 *     @type int          $per_page Number of items to show per page.
-	 *                        Default: false (no pagination - all items).
+	 *           filter by. Can be an array of actions.
+	 *     @type int|array $item_id ID of associated item. Can be an array
+	 *           of multiple item IDs.
+	 *     @type int|array $secondary_item_id ID of secondary associated
+	 *           item. Can be an array of multiple IDs.
+	 *     @type string $invite_sent Limit to draft, sent or all invitations.
+	 *			 'draft' returns only unsent invitations, 'sent' returns only
+	 *			 sent invitations, 'all' returns all. Default: 'all'.
+	 *     @type string $search_terms Term to match against component_name
+	 *           or component_action fields.
+	 *     @type string $order_by Database column to order invitations by.
+	 *     @type string $sort_order Either 'ASC' or 'DESC'.
+	 *     @type string $order_by Field to order results by.
+	 *     @type string $sort_order ASC or DESC.
+	 *     @type int $page Number of the current page of results. Default:
+	 *           false (no pagination - all items).
+	 *     @type int $per_page Number of items to show per page. Default:
+	 *           false (no pagination - all items).
 	 * }
 	 * @return array Located invitations.
 	 */
@@ -715,11 +664,10 @@ class BP_Invitations_Invitation {
 			'user_id'           => false,
 			'inviter_id'        => false,
 			'invitee_email'     => false,
-			'component_name'    => false,
+			'component_name'    => bp_invitations_get_registered_components(),
 			'component_action'  => false,
 			'item_id'           => false,
 			'secondary_item_id' => false,
-			'type'				=> false,
 			'invite_sent'       => 'all',
 			'search_terms'      => '',
 			'order_by'          => false,
@@ -739,13 +687,11 @@ class BP_Invitations_Invitation {
 			'id'                => $r['id'],
 			'user_id'           => $r['user_id'],
 			'inviter_id'		=> $r['inviter_id'],
-			'type'				=> $r['type'],
 			'invitee_email'     => $r['invitee_email'],
 			'component_name'    => $r['component_name'],
 			'component_action'  => $r['component_action'],
 			'item_id'           => $r['item_id'],
 			'secondary_item_id' => $r['secondary_item_id'],
-			'type'				=> $r['type'],
 			'invite_sent'       => $r['invite_sent'],
 			'search_terms'      => $r['search_terms'],
 		) );
@@ -781,6 +727,15 @@ class BP_Invitations_Invitation {
 	public static function get_total_count( $args ) {
 		global $wpdb;
 
+		/**
+		 * Default component_name to active_components
+		 *
+		 * @see http://buddypress.trac.wordpress.org/ticket/5300
+		 */
+		$args = wp_parse_args( $args, array(
+			'component_name' => bp_invitations_get_registered_components()
+		) );
+
 		// Load BuddyPress
 		$bp = buddypress();
 
@@ -803,11 +758,11 @@ class BP_Invitations_Invitation {
 	 *      accepted update/where arguments.
 	 *
 	 * @param array $update_args Associative array of fields to update,
-	 *              and the values to update them to. Of the format
-	 *              array( 'user_id' => 4, 'component_name' => 'groups', )
+	 *        and the values to update them to. Of the format
+	 *            array( 'user_id' => 4, 'component_name' => 'groups', )
 	 * @param array $where_args Associative array of columns/values, to
-	 *              determine which invitations should be updated. Formatted as
-	 *              array( 'item_id' => 7, 'component_action' => 'members', )
+	 *        determine which rows should be updated. Of the format
+	 *            array( 'item_id' => 7, 'component_action' => 'members', )
 	 * @return int|bool Number of rows updated on success, false on failure.
 	 */
 	public static function update( $update_args = array(), $where_args = array() ) {
@@ -828,8 +783,8 @@ class BP_Invitations_Invitation {
 	 *      accepted where arguments.
 	 *
 	 * @param array $args Associative array of columns/values, to determine
-	 *              which rows should be deleted.  Of the format
-	 *              array( 'item_id' => 7, 'component_action' => 'members', )
+	 *        which rows should be deleted.  Of the format
+	 *            array( 'item_id' => 7, 'component_action' => 'members', )
 	 * @return int|bool Number of rows deleted on success, false on failure.
 	 */
 	public static function delete( $args = array() ) {
@@ -840,55 +795,7 @@ class BP_Invitations_Invitation {
 		return self::_delete( $where['data'], $where['format'] );
 	}
 
-	/**
-	 * Accept invitations.
-	 *
-	 * @since BuddyPress (2.3.0)
-	 *
-	 * @see BP_Invitations_Invitation::get() for a description of
-	 *      accepted where arguments.
-	 *
-	 * @param array $args Associative array of columns/values, to determine
-	 *              which invitation should be accepted.  Of the format
-	 *              array( 'item_id' => 7, 'component_action' => 'members', )
-	 * @return bool True on success, false on failure.
-	 */
-	public static function accept( $args = array() ) {
-		$retval = false;
-
-		// Parse the arguments
-		$r  = wp_parse_args( $args, array(
-			'id'                => false,
-			'user_id'           => false,
-			'invitee_email'     => false,
-			'component_name'    => false,
-			'component_action'  => false,
-			'item_id'           => false,
-			'secondary_item_id' => false,
-			'invite_sent'       => 'all',
-		) );
-
-		// At the very least, we need either an invitation id or
-		// a user_id and component_name to proceed
-		if ( empty( $r['id'] ) && ( empty( $r['user_id'] ) && empty( $r['component_name'] ) ) ) {
-			return $retval;
-		}
-
-		// Give components a chance to act and halt the process
-		// if something goes wrong.
-		$remove = apply_filters( 'bp_invitation_accept_invite_', true, $args );
-
-		// Use a subset of args to remove any related invites/requests.
-		if ( $remove ) {
-			$retval = delete( $args = array(
-
-				) );
-		}
-
-		return $retval;
-	}
-
-	/** Helper methods ***********************************************/
+	/** Convenience methods ***********************************************/
 
 	/**
 	 * Delete a single invitation by ID.
@@ -908,95 +815,162 @@ class BP_Invitations_Invitation {
 	}
 
 	/**
-	 * Get incoming invitations for a user. We get and cache all of the
-	 * incoming invitations to a user. We'll filter the complete result
-	 * set in PHP, in order to take advantage of the cache. This set will
-	 * include requests from the user to join items (like groups), too.
+	 * Fetch "sent" incoming invitations to a specific user.
 	 *
 	 * @since BuddyPress (2.3.0)
 	 *
-	 * @param int $user_id ID of the user for whom the invitations are
-	 *            being fetched. Default: logged-in user ID.
-	 * @return array $invitations Array of invitation results.
-	 *               (Returns an empty array if none found.)
+	 * @param int $user_id ID of the user whose incoming invitations are being
+	 *        fetched.
+	 * @return array Associative array of outstanding invitations.
 	 */
-	public static function get_all_to_user( $user_id = 0 ) {
-		if ( empty( $user_id ) ) {
-			$user_id = bp_loggedin_user_id();
-		}
-
-		$invitations = self::get( array(
+	public static function get_sent_to_user( $user_id = 0 ) {
+		return self::get( array(
 			'user_id' => $user_id,
+			'invite_sent'  => 'sent',
 		) );
-
-		if ( empty( $invitations ) ) {
-			return array();
-		}
-
-		return $invitations;
 	}
 
 	/**
-	 * Get incoming invitations for someone who does not yet have a user_id.
-	 * We get and cache all of the incoming invitations to a user.
-	 * We'll filter the complete result set in PHP, in order to take advantage
-	 * of the cache. This set will include requests from the user to join items
-	 * (like groups), too.
+	 * Fetch all outgoing invitations in the database from a specific user.
 	 *
 	 * @since BuddyPress (2.3.0)
 	 *
-	 * @param int $user_id ID of the user for whom the invitations are
-	 *            being fetched. Default: logged-in user ID.
-	 * @return array $invitations Array of invitation results.
-	 *               (Returns an empty array if none found.)
+	 * @param int $user_id ID of the user whose outgoing invitations are being
+	 *        fetched.
+	 * @param string $status Optional. Status of invitations to fetch.
+	 *        'draft', or 'sent' for that subset. 'all' to get all.
+	 * @return array Associative array of invitation items.
 	 */
-	public static function get_all_to_user_email( $invitee_email = false ) {
-		if ( ! is_email( $invitee_email ) ) {
-			return array();
-		}
-
-		$invitations = self::get( array(
-			'invitee_email' => $invitee_email,
+	public static function get_all_from_user( $inviter_id, $status = 'all' ) {
+		return self::get( array(
+			'inviter_id' 	=> $inviter_id,
+			'invite_sent'  	=> $status,
 		) );
-
-		if ( empty( $invitations ) ) {
-			return array();
-		}
-
-		return $invitations;
 	}
 
 	/**
-	 * Get ougoing invitations for a user. We get and cache all of the
-	 * outgoing invitations from a user. We'll filter the complete result
-	 * set in PHP, in order to take advantage of the cache.
+	 * Fetch "sent" outgoing invitations from a specific user.
 	 *
 	 * @since BuddyPress (2.3.0)
 	 *
-	 * @param int $inviter_id ID of the user for whom the ougoing
-	 *            invitations are being fetched.
-	 *            Default: logged-in user ID.
-	 * @return array $invitations Array of invitation results.
-	 *               (Returns an empty array if none found.)
+	 * @param int $inviter_id ID of the user whose outgoing invitations are
+	 * 		  being fetched.
+	 * @return array Associative array of outstanding invitations.
 	 */
-	public static function get_all_from_user( $inviter_id = 0 ) {
-		if ( empty( $inviter_id ) ) {
-			$inviter_id = bp_loggedin_user_id();
-		}
-
-		$invitations = self::get( array(
-			'inviter_id' => $inviter_id,
+	public static function get_sent_from_user( $inviter_id = 0 ) {
+		return self::get( array(
+			'inviter_id' 	=> $inviter_id,
+			'invite_sent'  	=> 'sent',
 		) );
+	}
+
+	/**
+	 * Fetch all the read invitations in the database for a specific user.
+	 *
+	 * @since BuddyPress (2.3.0)
+	 *
+	 * @param int $inviter_id ID of the user whose outgoing invitations are
+	 * 		  being fetched.
+	 * @return array Associative array of unread invitation items.
+	 */
+	public static function get_draft_from_user( $inviter_id = 0 ) {
+		return self::get( array(
+			'inviter_id' 	=> $inviter_id,
+			'invite_sent'  	=> 'draft',
+		) );
+	}
+
+	/**
+	 * Get incoming invitations for a user, in a pagination-friendly format.
+	 *
+	 * @since BuddyPress (2.3.0)
+	 *
+	 * @param array $args {
+	 *     Array of arguments.
+	 *     @type int $user_id ID of the user for whom the invitations are
+	 *           being fetched. Default: logged-in user ID.
+	 *     @type string $invite_sent Limit to draft, sent or all invitations.
+	 *			 'draft' returns only unsent invitations, 'sent' returns only
+	 *			 sent invitations, 'all' returns all. Default: 'sent'.
+	 *     @type int $page Number of the page to return. Default: 1.
+	 *     @type int $per_page Number of results to display per page.
+	 *           Default: 10.
+	 *     @type string $search_terms Optional. A term to search against in
+	 *           the 'component_name' and 'component_action' columns.
+	 * }
+	 * @return array {
+	 *     @type array $invitations Array of invitation results.
+	 *     @type int $total Count of all located invitations matching
+	 *           the query params.
+	 * }
+	 */
+	public static function get_incoming_invitations_for_user( $args = array() ) {
+		$r = wp_parse_args( $args, array(
+			'user_id'      	=> bp_loggedin_user_id(),
+			'invite_sent'	=> 'sent',
+			'page'         	=> 1,
+			'per_page'     	=> 10,
+			'search_terms' 	=> '',
+		) );
+
+		$invitations = self::get( $r );
 
 		// Bail if no invitations
 		if ( empty( $invitations ) ) {
-			return array();
+			return false;
 		}
 
-		return $invitations;
+		$total_count = self::get_total_count( $r );
+
+		return array( 'invitations' => &$invitations, 'total' => $total_count );
 	}
 
-	/** Sent status **********************************************************/
+	/**
+	 * Get ougoing invitations for a user, in a pagination-friendly format.
+	 *
+	 * @since BuddyPress (2.3.0)
+	 *
+	 * @param array $args {
+	 *     Array of arguments.
+	 *     @type int $inviter_id ID of the user for whom the ougoing invitations
+	 *			 are being fetched. Default: logged-in user ID.
+	 *     @type string $invite_sent Limit to draft, sent or all invitations.
+	 *			 'draft' returns only unsent invitations, 'sent' returns only
+	 *			 sent invitations, 'all' returns all. Default: 'all'.
+	 *     @type int $page Number of the page to return. Default: 1.
+	 *     @type int $per_page Number of results to display per page.
+	 *           Default: 10.
+	 *     @type string $search_terms Optional. A term to search against in
+	 *           the 'component_name' and 'component_action' columns.
+	 * }
+	 * @return array {
+	 *     @type array $invitations Array of invitation results.
+	 *     @type int $total Count of all located invitations matching
+	 *           the query params.
+	 * }
+	 */
+	public static function get_outgoing_invitations_for_user( $args = array() ) {
+		$r = wp_parse_args( $args, array(
+			'user_id'      	=> bp_loggedin_user_id(),
+			'invite_sent'	=> 'all',
+			'page'         	=> 1,
+			'per_page'     	=> 10,
+			'search_terms' 	=> '',
+		) );
+
+		$invitations = self::get( $r );
+
+		// Bail if no invitations
+		if ( empty( $invitations ) ) {
+			return false;
+		}
+
+		$total_count = self::get_total_count( $r );
+
+		return array( 'invitations' => &$invitations, 'total' => $total_count );
+	}
+
+	/** Sent status ***********************************************************/
 
 	/**
 	 * Mark specific invitations as sent by invitation ID.
@@ -1004,7 +978,6 @@ class BP_Invitations_Invitation {
 	 * @since BuddyPress (2.3.0)
 	 *
 	 * @param int $id The ID of the invitation to mark as sent.
-	 * @return int|false Number of rows updated or false
 	 */
 	public static function mark_as_sent( $id = 0 ) {
 
@@ -1026,79 +999,45 @@ class BP_Invitations_Invitation {
 	}
 
 	/**
-	 * Mark invitations as sent that are found by user_id, inviter_id,
-	 * invitee_email, component name and action, optional item id,
-	 * optional secondary item id.
+	 * Mark invitations as sent that are found by user_id, inviter_id, item id, and optional
+	 * secondary item id, and component name and action.
 	 *
 	 * @since BuddyPress (2.3.0)
 	 *
- 	 * @param array $args {
-	 *     Associative array of arguments. All arguments but $page and
-	 *     $per_page can be treated as filter values for get_where_sql()
-	 *     and get_query_clauses(). All items are optional.
-	 *     @type int|array    $user_id ID of user being queried. Can be an
-	 *                        array of user IDs.
-	 *     @type int|array    $inviter_id ID of user who created the
-	 *                        invitation. Can be an array of user IDs.
-	 *                        Special cases
-	 *     @type string|array $invitee_email Email address of invited users
-	 *			              being queried. Can be an array of addresses.
-	 *     @type string|array $component_name Name of the component to
-	 *                        filter by. Can be an array of component names.
-	 *     @type string|array $component_action Name of the action to
-	 *                        filter by. Can be an array of actions.
-	 *     @type int|array    $item_id ID of associated item. Can be an array
-	 *                        of multiple item IDs.
-	 *     @type int|array    $secondary_item_id ID of secondary associated
-	 *                        item. Can be an array of multiple IDs.
-	 * }
+ 	 * @param int $user_id ID of user being invited.
+	 * @param int $inviter_id ID of user who created the invitation.
+	 * @param string $component_name The component that the invitations
+	 *        are associated with.
+	 * @param string $component_action The action that the invitations
+	 *        are associated with.
+ 	 * @param int $item_id The ID of the item associated with the
+	 *        invitations.
+	 * @param string $secondary_item_id Optional. ID of the secondary
+	 *        associated item.
 	 */
-	public static function mark_as_sent_by_data( $args ) {
-
-		$where_args = wp_parse_args( $args, array(
-			'user_id'           => 0,
-			'inviter_id'        => bp_loggedin_user_id(),
-			'invitee_email'     => '',
-			'component_name'    => '',
-			'component_action'  => '',
-			'item_id'           => 0,
-			'secondary_item_id' => 0,
-			'type'				=> 'invite',
-		) );
-
-		if ( empty( $where_args['user_id'] ) && empty( $where_args['invitee_email'] ) ) {
-			return false;
-		}
-
-		// Only invitations can be marked "sent", so an inviter ID must
-		// be specfied.
-		if ( empty( $where_args['inviter_id'] ) ) {
-			return false;
-		}
+	public static function mark_sent_by_data( $user_id, $inviter_id, $component_name = '', $component_action = '', $item_id = 0, $secondary_item_id = 0 ) {
 
 		// Values to be updated
 		$update_args = array(
 			'invite_sent' => 1,
 		);
 
-		// // WHERE clauses
-		// $where_args = array(
-		// 	'user_id' => $args['user_id'],
-		// 	'inviter_id' => $args['inviter_id'],
-		// 	'component_name' => $args['component_name'],
-		// );
+		// WHERE clauses
+		$where_args = array(
+			'item_id' => $item_id,
+		);
 
-		// if ( ! empty( $component_action ) ) {
-		// 	$where_args['component_action'] = $args['component_action'];
-		// }
+		if ( ! empty( $component_name ) ) {
+			$where_args['component_name'] = $component_name;
+		}
 
-		// if ( ! empty( $item_id ) ) {
-		// 	$where_args['item_id'] = $args['item_id'];
-		// }
+		if ( ! empty( $component_action ) ) {
+			$where_args['component_action'] = $component_action;
+		}
 
-		// if ( ! empty( $secondary_item_id ) ) {
-		// 	$where_args['secondary_item_id'] = $args['secondary_item_id'];
-		// }
+		if ( ! empty( $secondary_item_id ) ) {
+			$where_args['secondary_item_id'] = $secondary_item_id;
+		}
 
 		return self::update( $update_args, $where_args );
 	}
