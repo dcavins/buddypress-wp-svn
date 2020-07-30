@@ -706,7 +706,7 @@ function bp_core_add_page_mappings( $components, $existing = 'keep' ) {
 
 	// Register and Activate are not components, but need pages when
 	// registration is enabled.
-	if ( bp_get_signup_allowed() ) {
+	if ( bp_get_signup_allowed() || bp_get_members_invitations_allowed()  ) {
 		foreach ( array( 'register', 'activate' ) as $slug ) {
 			if ( ! isset( $pages[ $slug ] ) ) {
 				$pages_to_create[ $slug ] = $page_titles[ $slug ];
@@ -3428,6 +3428,9 @@ function bp_send_email( $email_type, $to, $args = array() ) {
 	// From, subject, content are set automatically.
 	if ( 'settings-verify-email-change' === $email_type && isset( $args['tokens']['displayname'] ) ) {
 		$email->set_to( $to, $args['tokens']['displayname'] );
+	// Emails sent to nonmembers will have no recipient.name populated.
+	} else if ( 'bp-members-invitation' === $email_type ) {
+		$email->set_to( $to, $to );
 	} else {
 		$email->set_to( $to );
 	}
@@ -3763,9 +3766,9 @@ function bp_email_get_schema() {
 			/* translators: do not remove {} brackets or translate its contents. */
 			'post_title'   => __( '[{{{site.name}}}] You have an invitation to the group: "{{group.name}}"', 'buddypress' ),
 			/* translators: do not remove {} brackets or translate its contents. */
-			'post_content' => __( "<a href=\"{{{inviter.url}}}\">{{inviter.name}}</a> has invited you to join the group: &quot;{{group.name}}&quot;.\n{{invite.message}}\n<a href=\"{{{invites.url}}}\">Go here to accept your invitation</a> or <a href=\"{{{group.url}}}\">visit the group</a> to learn more.", 'buddypress' ),
+			'post_content' => __( "<a href=\"{{{inviter.url}}}\">{{inviter.name}}</a> has invited you to join the group: &quot;{{group.name}}&quot;.\n\n{{invite.message}}\n\n<a href=\"{{{invites.url}}}\">Go here to accept your invitation</a> or <a href=\"{{{group.url}}}\">visit the group</a> to learn more.", 'buddypress' ),
 			/* translators: do not remove {} brackets or translate its contents. */
-			'post_excerpt' => __( "{{inviter.name}} has invited you to join the group: \"{{group.name}}\".\n\nTo accept your invitation, visit: {{{invites.url}}}\n\nTo learn more about the group, visit: {{{group.url}}}.\nTo view {{inviter.name}}'s profile, visit: {{{inviter.url}}}", 'buddypress' ),
+			'post_excerpt' => __( "{{inviter.name}} has invited you to join the group: \"{{group.name}}\".\n\n{{invite.message}}\n\nTo accept your invitation, visit: {{{invites.url}}}\n\nTo learn more about the group, visit: {{{group.url}}}.\nTo view {{inviter.name}}'s profile, visit: {{{inviter.url}}}", 'buddypress' ),
 		),
 		'groups-member-promoted' => array(
 			/* translators: do not remove {} brackets or translate its contents. */
@@ -3814,6 +3817,14 @@ function bp_email_get_schema() {
 			'post_content' => __( "Your membership request for the group &quot;<a href=\"{{{group.url}}}\">{{group.name}}</a>&quot; has been rejected.", 'buddypress' ),
 			/* translators: do not remove {} brackets or translate its contents. */
 			'post_excerpt' => __( "Your membership request for the group \"{{group.name}}\" has been rejected.\n\nTo request membership again, visit: {{{group.url}}}", 'buddypress' ),
+		),
+		'bp-members-invitation' => array(
+			/* translators: do not remove {} brackets or translate its contents. */
+			'post_title'   => __( '[{{{site.name}}}] You have an invitation to the site: "{{network.name}}"', 'buddypress' ),
+			/* translators: do not remove {} brackets or translate its contents. */
+			'post_content' => __( "<a href=\"{{{inviter.url}}}\">{{inviter.name}}</a> has invited you to join the site: &quot;{{network.name}}&quot;.\n\n{{invite.message}}\n\n<a href=\"{{{invites.url}}}\">Go here to accept your invitation</a> or <a href=\"{{{network.url}}}\">visit the site</a> to learn more.", 'buddypress' ),
+			/* translators: do not remove {} brackets or translate its contents. */
+			'post_excerpt' => __( "{{inviter.name}} has invited you to join the site: \"{{network.name}}\".\n\n{{invite.message}}\n\nTo accept your invitation, visit: {{{invites.url}}}\n\nTo learn more about the site, visit: {{{network.url}}}.\nTo view {{inviter.name}}'s profile, visit: {{{inviter.url}}}", 'buddypress' ),
 		),
 	) );
 }
@@ -3956,6 +3967,14 @@ function bp_email_get_type_schema( $field = 'description' ) {
 		),
 	);
 
+	$members_invitation = array(
+		'description'	=> __( 'A site member has sent a site invitation to the recipient.', 'buddypress' ),
+		'unsubscribe'	=> array(
+			'meta_key'	=> 'notification_bp_members_invite',
+			'message'	=> __( 'You will no longer receive emails when you are invited to join a site.', 'buddypress' ),
+		),
+	);
+
 	$types = array(
 		'activity-comment'                   => $activity_comment,
 		'activity-comment-author'            => $activity_comment_author,
@@ -3973,6 +3992,7 @@ function bp_email_get_type_schema( $field = 'description' ) {
 		'settings-verify-email-change'       => $settings_verify_email_change,
 		'groups-membership-request-accepted' => $groups_membership_request_accepted,
 		'groups-membership-request-rejected' => $groups_membership_request_rejected,
+		'bp-members-invitation'              => $members_invitation,
 	);
 
 	if ( $field !== 'all' ) {

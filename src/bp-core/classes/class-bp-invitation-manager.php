@@ -99,6 +99,11 @@ abstract class BP_Invitation_Manager {
 			return false;
 		}
 
+		// If an email address is specified, it must be a valid email address.
+		if ( $r['invitee_email'] && ! is_email( $r['invitee_email'] ) ) {
+			return false;
+		}
+
 		/**
 		 * Is this user allowed to extend invitations in this situation?
 		 *
@@ -156,7 +161,7 @@ abstract class BP_Invitation_Manager {
 	 *
 	 * @param int $invitation_id ID of invitation to send.
 	 *
-	 * @return int|bool The number of rows updated, or false on error.
+	 * @return bool The result of `run_send_action()`.
 	 */
 	public function send_invitation_by_id( $invitation_id = 0 ) {
 		$updated = false;
@@ -194,11 +199,13 @@ abstract class BP_Invitation_Manager {
 		}
 
 		// Perform the send action.
-		$this->run_send_action( $invitation );
+		$success = $this->run_send_action( $invitation );
 
-		$updated = BP_Invitation::mark_sent( $invitation->id );
+		if ( $success ) {
+			BP_Invitation::mark_sent( $invitation->id );
+		}
 
-		return $updated;
+		return $success;
 	}
 
 	/**
@@ -307,7 +314,7 @@ abstract class BP_Invitation_Manager {
 	 *
 	 * @param int $request_id ID of request to send.
 	 *
-	 * @return int|bool The number of rows updated, or false on error.
+	 * @return bool The result of `run_send_action()`.
 	 */
 	public function send_request_notification_by_id( $request_id = 0 ) {
 		$updated = false;
@@ -340,11 +347,13 @@ abstract class BP_Invitation_Manager {
 		}
 
 		// Perform the send action.
-		$this->run_send_action( $request );
+		$success = $this->run_send_action( $request );
 
-		$updated = BP_Invitation::mark_sent( $request->id );
+		if ( $success ) {
+			BP_Invitation::mark_sent( $request->id );
+		}
 
-		return $updated;
+		return $success;
 	}
 
 	/** Retrieve ******************************************************************/
@@ -379,6 +388,26 @@ abstract class BP_Invitation_Manager {
 		$args['class'] = $this->class_name;
 
 		return BP_Invitation::get( $args );
+	}
+
+	/**
+	 * Get a count of the number of invitations that match provided filter parameters.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @see BP_Invitation::get_total_count() for a description of accepted parameters.
+	 *
+	 * @return int Total number of invitations.
+	 */
+	public function get_invitations_total_count( $args = array() ) {
+		// Default to returning invitations, not requests.
+		if ( empty( $args['type'] ) ) {
+			$args['type'] = 'invite';
+		}
+		// Use the class_name property value.
+		$args['class'] = $this->class_name;
+
+		return BP_Invitation::get_total_count( $args );
 	}
 
 	/**
@@ -687,6 +716,26 @@ abstract class BP_Invitation_Manager {
 			'class' => $this->class_name,
 		) );
 	}
+
+	/**
+	 * Delete an invitation by id.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @param int $id ID of the invitation to delete.
+	 * @return int|bool Number of rows deleted on success, false on failure.
+	 */
+	public function delete_by_id( $id ) {
+		// Ensure that the invitation exists and was created by this class.
+		$invite = new BP_Invitation( $id );
+		if ( ! $invite->id || sanitize_key( $this->class_name ) !== $invite->class ) {
+			return false;
+		}
+
+		return BP_Invitation::delete_by_id( $id );
+	}
+
+
 
 	/**
 	 * This is where custom actions are added (in child classes)

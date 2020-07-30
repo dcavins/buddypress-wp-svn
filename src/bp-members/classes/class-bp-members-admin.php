@@ -140,6 +140,8 @@ class BP_Members_Admin {
 		$this->users_url    = bp_get_admin_url( 'users.php' );
 		$this->users_screen = bp_core_do_network_admin() ? 'users-network' : 'users';
 
+		$this->network_invites_page = '';
+
 		// Specific config: BuddyPress is not network activated.
 		$this->subsite_activated = (bool) is_multisite() && ! bp_is_network_activated();
 
@@ -248,7 +250,9 @@ class BP_Members_Admin {
 	 * @param string $value
 	 */
 	public function multisite_registration_on( $option_name, $value ) {
-		if ( 'user' === $value || 'all' === $value ) {
+		// Is registration enabled or are network invitations enabled?
+		if ( ( 'user' === $value || 'all' === $value )
+			|| bp_get_members_invitations_allowed() ) {
 			bp_core_add_page_mappings( array(
 				'register' => 1,
 				'activate' => 1
@@ -266,7 +270,7 @@ class BP_Members_Admin {
 	 */
 	public function single_site_registration_on( $old_value, $value ) {
 		// Single site.
-		if ( ! is_multisite() && ! empty( $value ) ) {
+		if ( ! is_multisite() && ( ! empty( $value ) || bp_get_members_invitations_allowed() ) ) {
 			bp_core_add_page_mappings( array(
 				'register' => 1,
 				'activate' => 1
@@ -488,6 +492,15 @@ class BP_Members_Admin {
 				'bp-signups',
 				array( $this, 'signups_admin' )
 			);
+
+			// Manage invitations.
+			$hooks['members_invitations'] = $this->network_invites_page = add_users_page(
+				__( 'Manage Invitations',  'buddypress' ),
+				__( 'Manage Invitations',  'buddypress' ),
+				$this->capability,
+				'bp-members-invitations',
+				array( $this, 'invitations_admin' )
+			);
 		}
 
 		$edit_page         = 'user-edit';
@@ -509,6 +522,8 @@ class BP_Members_Admin {
 			$this->user_page    .= '-network';
 			$this->users_page   .= '-network';
 			$this->signups_page .= '-network';
+
+			$this->network_invites_page .= '-network';
 		}
 
 		// Setup the screen ID's.
@@ -2563,6 +2578,39 @@ class BP_Members_Admin {
 		}
 
 		return $value;
+	}
+
+	/**
+	 * Set up the signups admin page.
+	 *
+	 * Loaded before the page is rendered, this function does all initial
+	 * setup, including: processing form requests, registering contextual
+	 * help, and setting up screen options.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @global $bp_members_signup_list_table
+	 */
+	public function members_invitations_admin_load() {
+		// @TODO
+	}
+
+	/**
+	 * Network invitations admin page router.
+	 *
+	 * Depending on the context, display
+	 * - the list of invitations,
+	 * - or the delete confirmation screen,
+	 * - or the activate confirmation screen,
+	 * - or the "resend" email confirmation screen.
+	 *
+	 * Also prepare the admin notices.
+	 *
+	 * @since 7.0.0
+	 */
+	public function invitations_admin() {
+		// @TODO
+		echo "<p>Coming Soon? :)</p>";
 	}
 }
 endif; // End class_exists check.
