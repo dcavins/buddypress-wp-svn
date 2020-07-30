@@ -275,6 +275,34 @@ function bp_activate_slug() {
 	}
 
 /**
+ * Output the members invitation pane slug.
+ *
+ * @since 1.5.0
+ *
+ */
+function bp_members_invitations_slug() {
+	echo bp_get_members_invitations_slug();
+}
+	/**
+	 * Return the members invitations root slug.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @return string
+	 */
+	function bp_get_members_invitations_slug() {
+
+		/**
+		 * Filters the Members invitations pane root slug.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string $slug Members invitations pane root slug.
+		 */
+		return apply_filters( 'bp_get_members_invitations_slug', _x( 'invitations', 'member profile invitations pane URL base', 'buddypress' ) );
+	}
+
+/**
  * Initialize the members loop.
  *
  * Based on the $args passed, bp_has_members() populates the $members_template
@@ -2208,8 +2236,14 @@ function bp_signup_email_value() {
 	 */
 	function bp_get_signup_email_value() {
 		$value = '';
-		if ( isset( $_POST['signup_email'] ) )
+		if ( isset( $_POST['signup_email'] ) ) {
 			$value = $_POST['signup_email'];
+		} else if ( bp_get_network_invitations_allowed() ) {
+			$invite = bp_get_network_invitation_from_request();
+			if ( $invite ) {
+				$value = $invite->invitee_email;
+			}
+		}
 
 		/**
 		 * Filters the email address submitted during signup.
@@ -2581,6 +2615,24 @@ function bp_signup_allowed() {
 		 */
 		return apply_filters( 'bp_get_signup_allowed', (bool) bp_get_option( 'users_can_register' ) );
 	}
+
+/**
+ * Are users allowed to invite users to join this site?
+ *
+ * @since 7.0.0
+ *
+ * @return bool
+ */
+function bp_get_network_invitations_allowed() {
+	/**
+	 * Filters whether or not network invitations are allowed.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @param bool $allowed Whether or not network invitations are allowed.
+	 */
+	return apply_filters( 'bp_get_network_invitations_allowed', (bool) bp_get_option( 'bp-enable-network-invitations' ) );
+}
 
 /**
  * Hook member activity feed to <head>.

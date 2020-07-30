@@ -43,8 +43,15 @@ function bp_core_screen_signup() {
 	$bp->signup->step = 'request-details';
 
 	if ( !bp_get_signup_allowed() ) {
-		$bp->signup->step = 'registration-disabled';
-
+		if ( bp_get_network_invitations_allowed() ) {
+			// Check to see if there's a valid invitation.
+			$maybe_invite = bp_get_network_invitation_from_request();
+			if ( ! $maybe_invite->id ) {
+				$bp->signup->step = 'registration-disabled';
+			}
+		} else {
+			$bp->signup->step = 'registration-disabled';
+		}
 		// If the signup page is submitted, validate and save.
 	} elseif ( isset( $_POST['signup_submit'] ) && bp_verify_nonce_request( 'bp_new_signup' ) ) {
 

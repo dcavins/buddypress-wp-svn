@@ -3153,6 +3153,9 @@ function bp_send_email( $email_type, $to, $args = array() ) {
 	// From, subject, content are set automatically.
 	if ( 'settings-verify-email-change' === $email_type && isset( $args['tokens']['displayname'] ) ) {
 		$email->set_to( $to, $args['tokens']['displayname'] );
+	// Emails sent to nonmembers will have no recipient.name populated.
+	} else if ( 'bp-network-invitation' === $email_type ) {
+		$email->set_to( $to, $to );
 	} else {
 		$email->set_to( $to );
 	}
@@ -3540,6 +3543,14 @@ function bp_email_get_schema() {
 			/* translators: do not remove {} brackets or translate its contents. */
 			'post_excerpt' => __( "Your membership request for the group \"{{group.name}}\" has been rejected.\n\nTo request membership again, visit: {{{group.url}}}", 'buddypress' ),
 		),
+		'bp-network-invitation' => array(
+			/* translators: do not remove {} brackets or translate its contents. */
+			'post_title'   => __( '[{{{site.name}}}] You have an invitation to the site: "{{network.name}}"', 'buddypress' ),
+			/* translators: do not remove {} brackets or translate its contents. */
+			'post_content' => __( "<a href=\"{{{inviter.url}}}\">{{inviter.name}}</a> has invited you to join the site: &quot;{{network.name}}&quot;.\n{{invite.message}}\n<a href=\"{{{invites.url}}}\">Go here to accept your invitation</a> or <a href=\"{{{network.url}}}\">visit the site</a> to learn more.", 'buddypress' ),
+			/* translators: do not remove {} brackets or translate its contents. */
+			'post_excerpt' => __( "{{inviter.name}} has invited you to join the site: \"{{network.name}}\".\n\nTo accept your invitation, visit: {{{invites.url}}}\n\nTo learn more about the site, visit: {{{network.url}}}.\nTo view {{inviter.name}}'s profile, visit: {{{inviter.url}}}", 'buddypress' ),
+		),
 	) );
 }
 
@@ -3681,6 +3692,14 @@ function bp_email_get_type_schema( $field = 'description' ) {
 		),
 	);
 
+	$network_invitation = array(
+		'description'	=> __( 'A site member has sent a site invitation to the recipient.', 'buddypress' ),
+		'unsubscribe'	=> array(
+			'meta_key'	=> 'notification_bp_network_invite',
+			'message'	=> __( 'You will no longer receive emails when you are invited to join a site.', 'buddypress' ),
+		),
+	);
+
 	$types = array(
 		'activity-comment'                   => $activity_comment,
 		'activity-comment-author'            => $activity_comment_author,
@@ -3698,6 +3717,7 @@ function bp_email_get_type_schema( $field = 'description' ) {
 		'settings-verify-email-change'       => $settings_verify_email_change,
 		'groups-membership-request-accepted' => $groups_membership_request_accepted,
 		'groups-membership-request-rejected' => $groups_membership_request_rejected,
+		'bp-network-invitation'              => $network_invitation,
 	);
 
 	if ( $field !== 'all' ) {

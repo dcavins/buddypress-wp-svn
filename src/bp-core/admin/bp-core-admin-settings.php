@@ -182,6 +182,22 @@ function bp_admin_setting_callback_cover_image_uploads() {
 <?php
 }
 
+/**
+ * Allow members to invite non-members to the network.
+ *
+ * @since 7.0.0
+ */
+function bp_admin_setting_callback_network_invitations() {
+?>
+	<input id="bp-enable-network-invitations" name="bp-enable-network-invitations" type="checkbox" value="1" <?php checked( bp_get_network_invitations_allowed() ); ?> />
+	<label for="bp-enable-network-invitations"><?php _e( 'Allow registered members to invite people to join this network', 'buddypress' ); ?></label>
+	<?php if ( ! bp_get_signup_allowed() ) : ?>
+		<p class="description"><?php _e( 'Public registration is currently disabled. However, invitees will still be able to register if network invitations are enabled.', 'buddypress' ); ?></p>
+	<?php endif; ?>
+<?php
+	do_action( 'bp_admin_settings_after_network_invitations' );
+}
+
 /** XProfile ******************************************************************/
 
 /**

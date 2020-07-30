@@ -409,6 +409,10 @@ class BP_Admin {
 			register_setting( 'buddypress', 'bp-disable-cover-image-uploads', 'intval' );
 		}
 
+		// Network Invitations.
+		add_settings_field( 'bp-enable-network-invitations', __( 'Network Invitations', 'buddypress' ), 'bp_admin_setting_callback_network_invitations', 'buddypress', 'bp_members' );
+		register_setting( 'buddypress', 'bp-enable-network-invitations', 'intval' );
+
 		/* XProfile Section **************************************************/
 
 		if ( bp_is_active( 'xprofile' ) ) {

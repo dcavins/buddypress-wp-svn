@@ -3044,3 +3044,142 @@ function bp_members_avatar_upload_dir( $directory = 'avatars', $user_id = 0 ) {
 		'error'   => false
 	) );
 }
+
+/**
+ * Invite a user to a network.
+ *
+ * @since 7.0.0
+ *
+ * @param array|string $args {
+ *     Array of arguments.
+ *     @type int    $invitee_email Email address of the user being invited.
+ *     @type int    $network_id    ID of the network to which the user is being invited.
+ *     @type int    $inviter_id    Optional. ID of the inviting user. Default:
+ *                                 ID of the logged-in user.
+ *     @type string $date_modified Optional. Modified date for the invitation.
+ *                                 Default: current date/time.
+ *     @type string $content       Optional. Message to invitee.
+ *     @type bool   $send_invite   Optional. Whether the invitation should be
+ *                                 sent now. Default: false.
+ * }
+ * @return bool True on success, false on failure.
+ */
+function bp_network_invite_user( $args ) {
+	$r = bp_parse_args( $args, array(
+		'invitee_email' => "",
+		'network_id'    => get_current_network_id(),
+		'inviter_id'    => bp_loggedin_user_id(),
+		'date_modified' => bp_core_current_time(),
+		'content'       => '',
+		'send_invite'   => 0
+	), 'bp_network_invite_user' );
+
+	$inv_args = array(
+		'invitee_email' => $r['invitee_email'],
+		'item_id'       => $r['network_id'],
+		'inviter_id'    => $r['inviter_id'],
+		'date_modified' => $r['date_modified'],
+		'content'       => $r['content'],
+		'send_invite'   => $r['send_invite']
+	);
+
+	// Create the invitataion.
+	$invites_class = new BP_Network_Invitation_Manager();
+	$created       = $invites_class->add_invitation( $inv_args );
+
+	/**
+	 * Fires after the creation of a new network invite.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @param array    $r       Array of parsed arguments for the network invite.
+	 * @param int|bool $created The ID of the invitation or false if it couldn't be created.
+	 */
+	do_action( 'bp_network_invite_user', $r, $created );
+
+	return $created;
+}
+
+/**
+ * Get invitations to the BP network filtered by arguments.
+ *
+ * @since 7.0.0
+ *
+ * @param array $args     Invitation arguments.
+ *                        See BP_Invitation::get() for list.
+ *
+ * @return array $invites     Matching BP_Invitation objects.
+ */
+function bp_network_get_invites( $args = array() ) {
+	$invites_class = new BP_Network_Invitation_Manager();
+	return $invites_class->get_invitations( $args );
+}
+
+/**
+ * Get hash based on details of a network invitation and the inviter.
+ *
+ * @since 7.0.0
+ *
+ * @param BP_Invitation object $invitation Invitation to create hash from.
+ *
+ * @return string $hash Calculated sha1 hash.
+ */
+function bp_network_invitation_get_hash( BP_Invitation $invitation ) {
+	$hash = false;
+
+	if ( ! empty( $invitation->id ) ) {
+		$inviter_ud = get_userdata( $invitation->inviter_id );
+		if ( $inviter_ud ) {
+			/*
+			 * Use some inviter details as part of the salt so that invitations from
+			 * users who are subsequently marked as spam will be invalidated.
+			 */
+			$hash = hash_hmac( 'sha1', "{$invitation->inviter_id}:{$invitation->date_modified}", "{$inviter_ud->user_status}:{$inviter_ud->user_registered}" );
+		}
+	}
+
+	// If there's a problem, return a string that will change and thus fail.
+	if ( ! $hash ) {
+		$hash = wp_generate_password( 32, false );
+	}
+
+	/**
+	 * Filters the hash calculated by the invitation details.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @param string $hash Calculated sha1 hash.
+	 * @param BP_Invitation object $invitation Invitation hash was created from.
+	 */
+	return apply_filters( 'bp_network_invitation_get_hash', $hash, $invitation );
+}
+
+/**
+ * Get the current invitation specified by the $_GET parameters.
+ *
+ * @since 7.0.0
+ *
+ * @return BP_Invitation $invite Invitation specified by the $_GET parameters.
+ */
+function bp_get_network_invitation_from_request() {
+	$invites_class = new BP_Network_Invitation_Manager();
+	$invite        = $invites_class->get_by_id( 0 );
+
+	if ( bp_get_network_invitations_allowed() && ! empty( $_GET['inv'] ) ) {
+		// Check to make sure the passed hash matches a calculated hash.
+		$maybe_invite = $invites_class->get_by_id( absint( $_GET['inv'] ) );
+		$hash = bp_network_invitation_get_hash( $maybe_invite );
+		if ( $_GET['ih'] === $hash ) {
+			$invite = $maybe_invite;
+		}
+	}
+
+	/**
+	 * Filters the invitation specified by the $_GET parameters.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @param BP_Invitation $invite Invitation specified by the $_GET parameters.
+	 */
+	return apply_filters( 'bp_get_network_invitation_from_request', $invite );
+}

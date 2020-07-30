@@ -248,7 +248,9 @@ class BP_Members_Admin {
 	 * @param string $value
 	 */
 	public function multisite_registration_on( $option_name, $value ) {
-		if ( 'user' === $value || 'all' === $value ) {
+		// Is registration enabled or are network invitations enabled?
+		if ( ( 'user' === $value || 'all' === $value )
+			|| bp_get_network_invitations_allowed() ) {
 			bp_core_add_page_mappings( array(
 				'register' => 1,
 				'activate' => 1
@@ -266,7 +268,7 @@ class BP_Members_Admin {
 	 */
 	public function single_site_registration_on( $old_value, $value ) {
 		// Single site.
-		if ( ! is_multisite() && ! empty( $value ) ) {
+		if ( ! is_multisite() && ( ! empty( $value ) || bp_get_network_invitations_allowed() ) ) {
 			bp_core_add_page_mappings( array(
 				'register' => 1,
 				'activate' => 1
