@@ -140,7 +140,7 @@ class BP_Members_Admin {
 		$this->users_url    = bp_get_admin_url( 'users.php' );
 		$this->users_screen = bp_core_do_network_admin() ? 'users-network' : 'users';
 
-		$this->members_invites_page = '';
+		$this->network_invites_page = '';
 
 		// Specific config: BuddyPress is not network activated.
 		$this->subsite_activated = (bool) is_multisite() && ! bp_is_network_activated();
@@ -494,7 +494,7 @@ class BP_Members_Admin {
 			);
 
 			// Manage invitations.
-			$hooks['members_invitations'] = $this->members_invites_page = add_users_page(
+			$hooks['members_invitations'] = $this->network_invites_page = add_users_page(
 				__( 'Manage Invitations',  'buddypress' ),
 				__( 'Manage Invitations',  'buddypress' ),
 				$this->capability,
@@ -523,7 +523,7 @@ class BP_Members_Admin {
 			$this->users_page   .= '-network';
 			$this->signups_page .= '-network';
 
-			$this->members_invites_page .= '-network';
+			$this->network_invites_page .= '-network';
 		}
 
 		// Setup the screen ID's.
@@ -1013,23 +1013,46 @@ class BP_Members_Admin {
 		<?php endif; ?>
 
 		<div class="wrap" id="community-profile-page">
-			<h1 class="wp-heading-inline"><?php echo esc_html( $title ); ?></h1>
+			<?php if ( version_compare( $GLOBALS['wp_version'], '4.8', '>=' ) ) : ?>
 
-			<?php if ( empty( $this->is_self_profile ) ) : ?>
+				<h1 class="wp-heading-inline"><?php echo esc_html( $title ); ?></h1>
 
-				<?php if ( current_user_can( 'create_users' ) ) : ?>
+				<?php if ( empty( $this->is_self_profile ) ) : ?>
 
-					<a href="user-new.php" class="page-title-action"><?php echo esc_html_x( 'Add New', 'user', 'buddypress' ); ?></a>
+					<?php if ( current_user_can( 'create_users' ) ) : ?>
 
-				<?php elseif ( is_multisite() && current_user_can( 'promote_users' ) ) : ?>
+						<a href="user-new.php" class="page-title-action"><?php echo esc_html_x( 'Add New', 'user', 'buddypress' ); ?></a>
 
-					<a href="user-new.php" class="page-title-action"><?php echo esc_html_x( 'Add Existing', 'user', 'buddypress' ); ?></a>
+					<?php elseif ( is_multisite() && current_user_can( 'promote_users' ) ) : ?>
+
+						<a href="user-new.php" class="page-title-action"><?php echo esc_html_x( 'Add Existing', 'user', 'buddypress' ); ?></a>
+
+					<?php endif; ?>
 
 				<?php endif; ?>
 
-			<?php endif; ?>
+				<hr class="wp-header-end">
 
-			<hr class="wp-header-end">
+			<?php else : ?>
+
+				<h1><?php echo esc_html( $title ); ?>
+
+					<?php if ( empty( $this->is_self_profile ) ) : ?>
+
+						<?php if ( current_user_can( 'create_users' ) ) : ?>
+
+							<a href="user-new.php" class="add-new-h2"><?php echo esc_html_x( 'Add New', 'user', 'buddypress' ); ?></a>
+
+						<?php elseif ( is_multisite() && current_user_can( 'promote_users' ) ) : ?>
+
+							<a href="user-new.php" class="add-new-h2"><?php echo esc_html_x( 'Add Existing', 'user', 'buddypress' ); ?></a>
+
+						<?php endif; ?>
+
+					<?php endif; ?>
+				</h1>
+
+			<?php endif; ?>
 
 			<?php if ( ! empty( $user ) ) :
 
@@ -1301,30 +1324,26 @@ class BP_Members_Admin {
 			return;
 		}
 
-		$types        = bp_get_member_types( array(), 'objects' );
-		$current_type = (array) bp_get_member_type( $user->ID, false );
-		$types_count  = count( array_filter( $current_type ) );
+		$types = bp_get_member_types( array(), 'objects' );
+		$current_type = bp_get_member_type( $user->ID );
 		?>
 
-		<label for="bp-members-profile-member-type" class="screen-reader-text">
-			<?php
+		<label for="bp-members-profile-member-type" class="screen-reader-text"><?php
 			/* translators: accessibility text */
 			esc_html_e( 'Select member type', 'buddypress' );
-			?>
-		</label>
-		<ul class="categorychecklist form-no-clear">
+		?></label>
+		<select name="bp-members-profile-member-type" id="bp-members-profile-member-type">
+			<option value="" <?php selected( '', $current_type ); ?>><?php
+				/* translators: no option picked in select box */
+				esc_attr_e( '----', 'buddypress' );
+			?></option>
 			<?php foreach ( $types as $type ) : ?>
-				<li>
-					<label class="selectit">
-						<input value="<?php echo esc_attr( $type->name ) ?>" name="bp-members-profile-member-type[]" type="checkbox" <?php checked( true, in_array( $type->name, $current_type ) ); ?>>
-						<?php echo esc_html( $type->labels['singular_name'] ); ?>
-					</label>
-				</li>
+				<option value="<?php echo esc_attr( $type->name ) ?>" <?php selected( $type->name, $current_type ) ?>><?php echo esc_html( $type->labels['singular_name'] ) ?></option>
 			<?php endforeach; ?>
-			<input type="hidden" value="<?php echo intval( $types_count ); ?>" name="bp-members-profile-member-types-count" />
-		</ul>
+		</select>
 
 		<?php
+
 		wp_nonce_field( 'bp-member-type-change-' . $user->ID, 'bp-member-type-nonce' );
 	}
 
@@ -1334,7 +1353,7 @@ class BP_Members_Admin {
 	 * @since 2.2.0
 	 */
 	public function process_member_type_update() {
-		if ( ! isset( $_POST['bp-member-type-nonce'] ) || ! isset( $_POST['bp-members-profile-member-types-count'] ) ) {
+		if ( ! isset( $_POST['bp-member-type-nonce'] ) || ! isset( $_POST['bp-members-profile-member-type'] ) ) {
 			return;
 		}
 
@@ -1347,16 +1366,9 @@ class BP_Members_Admin {
 			return;
 		}
 
-		if ( isset( $_POST['bp-members-profile-member-type'] ) ) {
-			// Member type [string] must either reference a valid member type, or be empty.
-			$member_type = wp_parse_slug_list( wp_unslash( $_POST['bp-members-profile-member-type'] ) );
-			$member_type = array_filter( $member_type );
-		} elseif ( 0 !== intval( $_POST['bp-members-profile-member-types-count'] ) ) {
-			$member_type = false;
-		}
-
-		// Nothing to do there.
-		if ( ! isset( $member_type ) ) {
+		// Member type string must either reference a valid member type, or be empty.
+		$member_type = stripslashes( $_POST['bp-members-profile-member-type'] );
+		if ( ! empty( $member_type ) && ! bp_get_member_type_object( $member_type ) ) {
 			return;
 		}
 
@@ -2079,24 +2091,49 @@ class BP_Members_Admin {
 		?>
 
 		<div class="wrap">
-			<h1 class="wp-heading-inline"><?php _e( 'Users', 'buddypress' ); ?></h1>
+			<?php if ( version_compare( $GLOBALS['wp_version'], '4.8', '>=' ) ) : ?>
 
-			<?php if ( current_user_can( 'create_users' ) ) : ?>
+				<h1 class="wp-heading-inline"><?php _e( 'Users', 'buddypress' ); ?></h1>
 
-				<a href="user-new.php" class="page-title-action"><?php echo esc_html_x( 'Add New', 'user', 'buddypress' ); ?></a>
+				<?php if ( current_user_can( 'create_users' ) ) : ?>
 
-			<?php elseif ( is_multisite() && current_user_can( 'promote_users' ) ) : ?>
+					<a href="user-new.php" class="page-title-action"><?php echo esc_html_x( 'Add New', 'user', 'buddypress' ); ?></a>
 
-				<a href="user-new.php" class="page-title-action"><?php echo esc_html_x( 'Add Existing', 'user', 'buddypress' ); ?></a>
+				<?php elseif ( is_multisite() && current_user_can( 'promote_users' ) ) : ?>
 
-			<?php endif;
+					<a href="user-new.php" class="page-title-action"><?php echo esc_html_x( 'Add Existing', 'user', 'buddypress' ); ?></a>
 
-			if ( $usersearch ) {
-				printf( '<span class="subtitle">' . __( 'Search results for &#8220;%s&#8221;', 'buddypress' ) . '</span>', esc_html( $usersearch ) );
-			}
-			?>
+				<?php endif;
 
-			<hr class="wp-header-end">
+				if ( $usersearch ) {
+					printf( '<span class="subtitle">' . __( 'Search results for &#8220;%s&#8221;', 'buddypress' ) . '</span>', esc_html( $usersearch ) );
+				}
+				?>
+
+				<hr class="wp-header-end">
+
+			<?php else : ?>
+
+				<h1><?php _e( 'Users', 'buddypress' ); ?>
+
+					<?php if ( current_user_can( 'create_users' ) ) : ?>
+
+						<a href="user-new.php" class="add-new-h2"><?php echo esc_html_x( 'Add New', 'user', 'buddypress' ); ?></a>
+
+					<?php elseif ( is_multisite() && current_user_can( 'promote_users' ) ) : ?>
+
+						<a href="user-new.php" class="add-new-h2"><?php echo esc_html_x( 'Add Existing', 'user', 'buddypress' ); ?></a>
+
+					<?php endif;
+
+					if ( $usersearch ) {
+						printf( '<span class="subtitle">' . __( 'Search results for &#8220;%s&#8221;', 'buddypress' ) . '</span>', esc_html( $usersearch ) );
+					}
+
+					?>
+				</h1>
+
+			<?php endif; ?>
 
 			<?php // Display each signups on its own row. ?>
 			<?php $bp_members_signup_list_table->views(); ?>
@@ -2221,9 +2258,7 @@ class BP_Members_Admin {
 		?>
 
 		<div class="wrap">
-			<h1 class="wp-heading-inline"><?php echo esc_html( $header_text ); ?></h1>
-			<hr class="wp-header-end">
-
+			<h1><?php echo esc_html( $header_text ); ?></h1>
 			<p><?php echo esc_html( $helper_text ); ?></p>
 
 			<ol class="bp-signups-list">
@@ -2413,22 +2448,25 @@ class BP_Members_Admin {
 			foreach ( (array) $_REQUEST['users'] as $user_id ) {
 				$user_id = (int) $user_id;
 
-				// Get the old member types to check against.
-				$current_types = bp_get_member_type( $user_id, false );
+				// Get the old member type to check against.
+				$member_type = bp_get_member_type( $user_id );
 
-				if ( $current_types && 'remove_member_type' === $new_type ) {
-					$member_types = array();
-				} elseif ( ! $current_types || 1 !== count( $current_types ) || $new_type !== $current_types[0] ) {
-					// Set the new member type.
-					$member_types = array( $new_type );
-				}
-
-				if ( isset( $member_types ) ) {
-					$set = bp_set_member_type( $user_id, $member_types );
-					if ( false === $set || is_wp_error( $set ) ) {
-						$error = true;
+				if ( 'remove_member_type' === $new_type ) {
+					// Remove the current member type, if there's one to remove.
+					if ( $member_type ) {
+						$removed = bp_remove_member_type( $user_id, $member_type );
+						if ( false === $removed || is_wp_error( $removed ) ) {
+							$error = true;
+						}
 					}
-					unset( $member_types );
+				} else {
+					// Set the new member type.
+					if ( $new_type !== $member_type ) {
+						$set = bp_set_member_type( $user_id, $new_type );
+						if ( false === $set || is_wp_error( $set ) ) {
+							$error = true;
+						}
+					}
 				}
 			}
 		}
@@ -2500,26 +2538,12 @@ class BP_Members_Admin {
 		}
 
 		// Get the member type.
-		$member_type = bp_get_member_type( $user_id, false );
+		$type = bp_get_member_type( $user_id );
 
-		// Build the Output.
-		if ( $member_type ) {
-			$member_types = array_filter( array_map( 'bp_get_member_type_object', $member_type ) );
-			if ( ! $member_types ) {
-				return $retval;
-			}
-
-			$type_links = array();
-			foreach ( $member_types as $type ) {
-				$url          = add_query_arg( array( 'bp-member-type' => urlencode( $type->name ) ) );
-				$type_links[] = sprintf(
-					'<a href="%1$s">%2$s</a>',
-					esc_url( $url ),
-					esc_html( $type->labels['singular_name'] )
-				);
-			}
-
-			$retval = implode( ', ', $type_links );
+		// Output the
+		if ( $type_obj = bp_get_member_type_object( $type ) ) {
+			$url = add_query_arg( array( 'bp-member-type' => urlencode( $type ) ) );
+			$retval = '<a href="' . esc_url( $url ) . '">' . esc_html( $type_obj->labels['singular_name'] ) . '</a>';
 		}
 
 		return $retval;

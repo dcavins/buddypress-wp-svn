@@ -28,7 +28,7 @@
 
 		<tbody>
 
-			<?php while ( bp_the_members_invitations() ) : bp_the_members_invitation(); ?>
+			<?php while ( bp_the_network_invitations() ) : bp_the_network_invitation(); ?>
 
 				<tr>
 					<td></td>
