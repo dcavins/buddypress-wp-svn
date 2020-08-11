@@ -2254,7 +2254,7 @@ function bp_is_settings_component() {
  *
  * @return bool True if the current page is an Invitations screen.
  */
-function bp_is_invitations_component() {
+function bp_is_network_invitations_component() {
 	return (bool) bp_is_current_component( bp_get_members_invitations_slug() );
 }
 
@@ -2659,29 +2659,42 @@ function bp_is_user_settings_profile() {
 }
 
 /**
- * Is the current page a user's Friends page?
+ * Is the current page a user's Network Invitations page?
  *
- * Eg http://example.com/members/joe/blogs/friends/ (or a subpage thereof).
+ * Eg http://example.com/members/cassie/invitations/ (or a subpage thereof).
  *
- * @since 6.0.0
+ * @since 7.0.0
  *
- * @return bool True if the current page is a user's Friends page.
+ * @return bool True if the current page is a user's Network Invitations page.
  */
-function bp_is_user_invitations() {
-	return (bool) ( bp_is_user() && bp_is_invitations_component() );
+function bp_is_user_network_invitations() {
+	return (bool) ( bp_is_user() && bp_is_network_invitations_component() );
 }
 
 /**
- * Is the current page a user's Friend Requests page?
+ * Is the current page a user's List Invites page?
  *
- * Eg http://example.com/members/joe/friends/requests/.
+ * Eg http://example.com/members/cassie/invitations/list-invites/.
  *
- * @since 1.5.0
+ * @since 7.0.0
  *
- * @return bool True if the current page is a user's Friends Requests page.
+ * @return bool True if the current page is a user's List Invites page.
  */
-function bp_is_user_invitations_list() {
-	return (bool) ( bp_is_user_invitations() && bp_is_current_action( 'sent-invites' ) );
+function bp_is_user_network_invitations_list() {
+	return (bool) ( bp_is_user_network_invitations() && bp_is_current_action( 'list-invites' ) );
+}
+
+/**
+ * Is the current page a user's Send Invites page?
+ *
+ * Eg http://example.com/members/cassie/invitations/send-invites/.
+ *
+ * @since 7.0.0
+ *
+ * @return bool True if the current page is a user's Send Invites page.
+ */
+function bp_is_user_network_invitations_send_screen() {
+	return (bool) ( bp_is_user_network_invitations() && bp_is_current_action( 'send-invites' ) );
 }
 
 /** Groups ********************************************************************/

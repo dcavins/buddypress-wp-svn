@@ -151,7 +151,6 @@ function bp_members_user_can_filter( $retval, $user_id, $capability, $site_id, $
 			$retval = true;
 			break;
 		case 'bp_network_receive_invitation':
-		var_dump( 'args', $args );
 			$retval = true;
 			// The invited user must not already be a member of the network.
 			if ( empty( $args['invitee_email'] ) || false !== get_user_by( 'email', $args['invitee_email'] ) ) {

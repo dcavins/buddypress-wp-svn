@@ -3046,6 +3046,21 @@ function bp_members_avatar_upload_dir( $directory = 'avatars', $user_id = 0 ) {
 }
 
 /**
+ * Get invitations to the BP network filtered by arguments.
+ *
+ * @since 7.0.0
+ *
+ * @param array $args     Invitation arguments.
+ *                        See BP_Invitation::get() for list.
+ *
+ * @return array $invites     Matching BP_Invitation objects.
+ */
+function bp_network_get_invites( $args = array() ) {
+	$invites_class = new BP_Network_Invitation_Manager();
+	return $invites_class->get_invitations( $args );
+}
+
+/**
  * Invite a user to a network.
  *
  * @since 7.0.0
@@ -3066,7 +3081,7 @@ function bp_members_avatar_upload_dir( $directory = 'avatars', $user_id = 0 ) {
  */
 function bp_network_invite_user( $args ) {
 	$r = bp_parse_args( $args, array(
-		'invitee_email' => "",
+		'invitee_email' => '',
 		'network_id'    => get_current_network_id(),
 		'inviter_id'    => bp_loggedin_user_id(),
 		'date_modified' => bp_core_current_time(),
@@ -3101,18 +3116,143 @@ function bp_network_invite_user( $args ) {
 }
 
 /**
- * Get invitations to the BP network filtered by arguments.
+ * Resend a network invitation email by id.
  *
  * @since 7.0.0
  *
- * @param array $args     Invitation arguments.
- *                        See BP_Invitation::get() for list.
- *
- * @return array $invites     Matching BP_Invitation objects.
+ * @param int $id ID of the invitation to resend.
+ * @return bool True on success, false on failure.
  */
-function bp_network_get_invites( $args = array() ) {
+function bp_network_invitation_resend_by_id( $id = 0 ) {
+
+	// Find the invitation before deleting it.
+	$existing_invite = new BP_Invitation( $id );
+	$invites_class   = new BP_Network_Invitation_Manager();
+	$success         = $invites_class->send_invitation_by_id( $id );
+
+	error_log( 'send by id '.print_r( $success, true ) );
+
+	if ( ! $success ) {
+		return $success;
+	}
+
+	/**
+	 * Fires after the re-sending of a network invite.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @param BP_Invitation $existing_invite The invitation that was resent.
+	 */
+	do_action( 'bp_network_invite_resent_invitation', $existing_invite );
+
+	return $success;
+}
+
+/**
+ * Delete a network invitation by id.
+ *
+ * @since 7.0.0
+ *
+ * @param int $id ID of the invitation to delete.
+ * @return int|bool Number of rows deleted on success, false on failure.
+ */
+function bp_network_invitation_delete_by_id( $id = 0 ) {
+
+	// Find the invitation before deleting it.
+	$existing_invite = new BP_Invitation( $id );
+	$invites_class   = new BP_Network_Invitation_Manager();
+	$success         = $invites_class->delete_by_id( $id );
+
+	if ( ! $success ) {
+		return $success;
+	}
+
+	// Run a different action depending on the status of the invite.
+	if ( ! $existing_invite->invite_sent ) {
+		/**
+		 * Fires after the deletion of an unsent network invite.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param BP_Invitation $existing_invite The invitation to be deleted.
+		 */
+		do_action( 'bp_network_invite_canceled_invitation', $existing_invite );
+	} else if ( ! $existing_invite->accepted ) {
+		/**
+		 * Fires after the deletion of a sent, but not yet accepted, network invite.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param BP_Invitation $existing_invite The invitation to be deleted.
+		 */
+		do_action( 'bp_network_invite_revoked_invitation', $existing_invite );
+	} else {
+		/**
+		 * Fires after the deletion of a sent and accepted network invite.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param BP_Invitation $existing_invite The invitation to be deleted.
+		 */
+		do_action( 'bp_network_invite_deleted_invitation', $existing_invite );
+	}
+
+	return $success;
+}
+
+/**
+ * Delete a network invitation.
+ *
+ * @since 7.0.0
+ *
+ * @param intring $args {
+ *     Array of arguments.
+ *     @type int|array $id            Id(s) of the invitation(s) to remove.
+ *     @type int       $invitee_email Email address of the user being invited.
+ *     @type int       $network_id    ID of the network to which the user is being invited.
+ *     @type int       $inviter_id    ID of the inviting user.
+ *     @type int       $accepted      Whether the invitation has been accepted yet.
+ *     @type int       $invite_sent   Whether the invitation has been sent yet.
+ * }
+ * @return bool True on success, false on failure.
+ */
+function bp_network_invitation_delete_invites( $args ) {
+	$r = bp_parse_args( $args, array(
+		'id'            => 0,
+ 		'invitee_email' => '',
+		'network_id'    => get_current_network_id(),
+		'inviter_id'    => null,
+		'accepted'      => null,
+		'invite_sent'   => null
+	), 'bp_network_invite_user' );
+
+	$inv_args = array(
+		'id'            => $r['id'],
+		'invitee_email' => $r['invitee_email'],
+		'item_id'       => $r['network_id'],
+		'inviter_id'    => $r['inviter_id'],
+	);
+
+	// Find the invitation(s).
 	$invites_class = new BP_Network_Invitation_Manager();
-	return $invites_class->get_invitations( $args );
+	$invites       = $invites_class->get_invitations( $inv_args );
+
+	// Loop through, deleting each invitation.
+	foreach ( $invites as $invite ) {
+		/**
+		 * Fires after the deletion of a sent network invite.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array    $r       Array of parsed arguments for the network invite.
+		 * @param int|bool $created The ID of the invitation or false if it couldn't be created.
+		 */
+		do_action( 'bp_network_invite_revoked_invitation', $inv_args, $created );
+	}
+
+
+
+	return $invites;
 }
 
 /**

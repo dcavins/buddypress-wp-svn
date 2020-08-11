@@ -141,10 +141,10 @@ class BP_Members_Component extends BP_Component {
 		}
 
 		// Invitations.
-		if ( is_user_logged_in() && bp_is_user_invitations() ) {
-			// User nav.
-			require $this->path . 'bp-members/screens/send-invites.php';
-			if ( bp_is_user_invitations_list() ) {
+		if ( is_user_logged_in() && bp_is_user_network_invitations() ) {
+			if ( bp_is_user_network_invitations_send_screen() ) {
+				require $this->path . 'bp-members/screens/send-invites.php';
+			} else {
 				require $this->path . 'bp-members/screens/list-invites.php';
 			}
 		}
@@ -242,6 +242,11 @@ class BP_Members_Component extends BP_Component {
 			$bp->profile->slug = 'profile';
 			$bp->profile->id   = 'profile';
 		}
+
+		/** Network Invitations **************************************************
+		 */
+
+		$bp->network_invitations = new stdClass;
 	}
 
 	/**

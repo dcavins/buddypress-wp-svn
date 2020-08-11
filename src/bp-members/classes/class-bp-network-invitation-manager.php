@@ -42,13 +42,8 @@ class BP_Network_Invitation_Manager extends BP_Invitation_Manager {
 	public function run_send_action( BP_Invitation $invitation ) {
 		// Notify site admins of the pending request
 		if ( 'request' === $invitation->type ) {
-			// $admins = groups_get_group_admins( $invitation->item_id );
-
-			// foreach ( $admins as $admin ) {
-			// 	groups_notification_new_membership_request( $invitation->user_id, $admin->user_id, $invitation->item_id, $invitation->id );
-			// }
+			// @TODO
 			return true;
-
 		// Notify the invitee of the invitation.
 		} else {
 			$inviter_ud = bp_core_get_core_userdata( $invitation->inviter_id );
@@ -79,7 +74,7 @@ class BP_Network_Invitation_Manager extends BP_Invitation_Manager {
 				),
 			);
 
-			bp_send_email( 'bp-network-invitation', $invitation->invitee_email, $args );
+			return bp_send_email( 'bp-network-invitation', $invitation->invitee_email, $args );
 		}
 	}
 
@@ -108,13 +103,6 @@ class BP_Network_Invitation_Manager extends BP_Invitation_Manager {
 			 */
 			do_action( 'network_membership_request_accepted', $r['user_id'], $r['item_id'] );
 		} else {
-			// Get an inviter_id from the invitation.
-			// $invites = groups_get_invites( $r );
-			// $inviter_id = 0;
-			// if ( $invites ) {
-			// 	$inviter_id = current( $invites )->inviter_id;
-			// }
-
 			/**
 			 * Fires after a user has accepted a group invite.
 			 *
