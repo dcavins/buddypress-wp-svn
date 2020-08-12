@@ -15,7 +15,7 @@ function bp_invitations_setup_nav() {
 		return;
 	}
 
-	$user_can_send_invites = bp_user_can( bp_displayed_user_id(), 'bp_network_send_invitation' );
+	$user_has_access = bp_user_has_access() && bp_user_can( bp_displayed_user_id(), 'bp_network_send_invitation' );
 
 	/* Add 'Send Invites' to the main user profile navigation */
 	bp_core_new_nav_item( array(
@@ -24,7 +24,7 @@ function bp_invitations_setup_nav() {
 		'position' => 80,
 		'screen_function' => 'members_screen_send_invites',
 		'default_subnav_slug' => 'list-invites',
-		'show_for_displayed_user' => $user_can_send_invites
+		'show_for_displayed_user' => $user_has_access
 	) );
 
 	$parent_link = trailingslashit( bp_displayed_user_domain() . bp_get_members_invitations_slug() );
@@ -37,7 +37,7 @@ function bp_invitations_setup_nav() {
 		'parent_url' => $parent_link,
 		'screen_function' => 'members_screen_list_sent_invites',
 		'position' => 10,
-		'user_has_access' => $user_can_send_invites
+		'user_has_access' => $user_has_access
 	) );
 
 	bp_core_new_subnav_item( array(
@@ -47,7 +47,7 @@ function bp_invitations_setup_nav() {
 		'parent_url' => $parent_link,
 		'screen_function' => 'members_screen_send_invites',
 		'position' => 20,
-		'user_has_access' => $user_can_send_invites && bp_is_my_profile()
+		'user_has_access' => $user_has_access && bp_is_my_profile()
 	) );
 }
 add_action( 'bp_setup_nav', 'bp_invitations_setup_nav' );
