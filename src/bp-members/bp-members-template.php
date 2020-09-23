@@ -2611,11 +2611,11 @@ function bp_signup_allowed() {
  */
 function bp_get_members_invitations_allowed() {
 	/**
-	 * Filters whether or not network invitations are allowed.
+	 * Filters whether or not community invitations are allowed.
 	 *
 	 * @since 7.0.0
 	 *
-	 * @param bool $allowed Whether or not network invitations are allowed.
+	 * @param bool $allowed Whether or not community invitations are allowed.
 	 */
 	return apply_filters( 'bp_get_members_invitations_allowed', bp_is_active( 'members', 'invitations' ) && (bool) bp_get_option( 'bp-enable-members-invitations' ) );
 }
@@ -2728,7 +2728,7 @@ function bp_avatar_delete_link() {
 	}
 
 
-/** The Network Invitations Loop ******************************************************************/
+/** The Members Invitations Loop ******************************************************************/
 
 /**
  * Initialize the community invitations loop.
@@ -2814,7 +2814,7 @@ function bp_has_members_invitations( $args = '' ) {
  *
  * @return array List of network invitations.
  */
-function bp_the_network_invitations() {
+function bp_the_members_invitations() {
 	return buddypress()->members->invitations->query_loop->invitations();
 }
 
@@ -2825,7 +2825,7 @@ function bp_the_network_invitations() {
  *
  * @return object The current network invitation within the loop.
  */
-function bp_the_network_invitation() {
+function bp_the_members_invitation() {
 	return buddypress()->members->invitations->query_loop->the_invitation();
 }
 

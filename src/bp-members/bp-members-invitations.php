@@ -10,7 +10,7 @@
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
 
-function bp_invitations_setup_nav() {
+function bp_members_invitations_setup_nav() {
 	if ( ! bp_get_members_invitations_allowed() ) {
 		return;
 	}
@@ -56,7 +56,7 @@ function bp_invitations_setup_nav() {
 		)
 	);
 }
-add_action( 'bp_setup_nav', 'bp_invitations_setup_nav' );
+add_action( 'bp_setup_nav', 'bp_members_invitations_setup_nav' );
 
 /**
  * When a user joins the network via an invitation, skip sending the activation email.

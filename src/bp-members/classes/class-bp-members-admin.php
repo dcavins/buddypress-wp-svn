@@ -140,7 +140,7 @@ class BP_Members_Admin {
 		$this->users_url    = bp_get_admin_url( 'users.php' );
 		$this->users_screen = bp_core_do_network_admin() ? 'users-network' : 'users';
 
-		$this->network_invites_page = '';
+		$this->members_invites_page = '';
 
 		// Specific config: BuddyPress is not network activated.
 		$this->subsite_activated = (bool) is_multisite() && ! bp_is_network_activated();
@@ -494,7 +494,7 @@ class BP_Members_Admin {
 			);
 
 			// Manage invitations.
-			$hooks['members_invitations'] = $this->network_invites_page = add_users_page(
+			$hooks['members_invitations'] = $this->members_invites_page = add_users_page(
 				__( 'Manage Invitations',  'buddypress' ),
 				__( 'Manage Invitations',  'buddypress' ),
 				$this->capability,
@@ -523,7 +523,7 @@ class BP_Members_Admin {
 			$this->users_page   .= '-network';
 			$this->signups_page .= '-network';
 
-			$this->network_invites_page .= '-network';
+			$this->members_invites_page .= '-network';
 		}
 
 		// Setup the screen ID's.
