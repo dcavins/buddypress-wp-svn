@@ -443,7 +443,6 @@ class BP_Invitation {
 		// search_terms.
 		if ( ! empty( $args['search_terms'] ) ) {
 			$search_terms_like = '%' . bp_esc_like( $args['search_terms'] ) . '%';
-			// $where_conditions['search_terms'] = $wpdb->prepare( "( class LIKE %s )", $search_terms_like );
 			$where_conditions['search_terms']  = $wpdb->prepare( '(invitee_email LIKE %s OR content LIKE %s)', $search_terms_like, $search_terms_like );
 		}
 
