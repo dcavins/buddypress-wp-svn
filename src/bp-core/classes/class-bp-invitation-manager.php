@@ -139,7 +139,7 @@ abstract class BP_Invitation_Manager {
 
 		// "Send" the invite if necessary.
 		if ( $invite_id && $r['send_invite'] ) {
-			$sent = $this->send_invitation_by_id( $invite_id );
+			$sent = $this->send_invitation_by_id( $invite_id, $args );
 			if ( ! $sent ) {
 				return false;
 			}
@@ -154,11 +154,13 @@ abstract class BP_Invitation_Manager {
 	 * @since 5.0.0
 	 * @access public
 	 *
-	 * @param int $invitation_id ID of invitation to send.
+	 * @param int   $invitation_id ID of invitation to send.
+ 	 * @param array $args          Invitation characteristics used
+ 	 *                             to override certain sending behaviors.
 	 *
 	 * @return int|bool The number of rows updated, or false on error.
 	 */
-	public function send_invitation_by_id( $invitation_id = 0 ) {
+	public function send_invitation_by_id( $invitation_id = 0, $args = array() ) {
 		$updated = false;
 
 		$invitation = new BP_Invitation( $invitation_id );
@@ -196,7 +198,7 @@ abstract class BP_Invitation_Manager {
 		// Perform the send action.
 		$this->run_send_action( $invitation );
 
-		$updated = BP_Invitation::mark_sent( $invitation->id );
+		$updated = BP_Invitation::mark_sent( $invitation->id, $args );
 
 		return $updated;
 	}
@@ -305,11 +307,13 @@ abstract class BP_Invitation_Manager {
 	 * @since 5.0.0
 	 * @access public
 	 *
-	 * @param int $request_id ID of request to send.
+	 * @param int   $request_id ID of request to send.
+ 	 * @param array $args       Invitation characteristics used
+ 	 *                          to override certain sending behaviors.
 	 *
 	 * @return int|bool The number of rows updated, or false on error.
 	 */
-	public function send_request_notification_by_id( $request_id = 0 ) {
+	public function send_request_notification_by_id( $request_id = 0, $args = array() ) {
 		$updated = false;
 
 		$request = new BP_Invitation( $request_id );
@@ -342,7 +346,7 @@ abstract class BP_Invitation_Manager {
 		// Perform the send action.
 		$this->run_send_action( $request );
 
-		$updated = BP_Invitation::mark_sent( $request->id );
+		$updated = BP_Invitation::mark_sent( $request->id, $args );
 
 		return $updated;
 	}
@@ -485,7 +489,7 @@ abstract class BP_Invitation_Manager {
 		$success = $this->run_acceptance_action( 'invite', $r );
 		if ( $success ) {
 			// Mark invitations & requests to this item for this user.
-			$this->mark_accepted( $r );
+			$this->mark_accepted( $r, $args );
 
 			// Allow plugins an opportunity to act on the change.
 			do_action( 'bp_invitations_accepted_invite', $r );
@@ -531,7 +535,7 @@ abstract class BP_Invitation_Manager {
 		$success = $this->run_acceptance_action( 'request', $r );
 		if ( $success ) {
 			// Update/Delete all related invitations & requests to this item for this user.
-			$this->mark_accepted( $r );
+			$this->mark_accepted( $r, $args );
 
 			// Allow plugins an opportunity to act on the change.
 			do_action( 'bp_invitations_accepted_request', $r );
@@ -618,11 +622,12 @@ abstract class BP_Invitation_Manager {
 	 *
 	 * @since 5.0.0
 	 *
-	 * @param int $id The ID of the invitation to mark as sent.
+	 * @see BP_Invitation::mark_accepted()
+	 *      for a description of arguments.
 	 * @return bool True on success, false on failure.
 	 */
-	public function mark_accepted_by_id( $id ) {
-		return BP_Invitation::mark_accepted( $id );
+	public function mark_accepted_by_id( $id, $args ) {
+		return BP_Invitation::mark_accepted( $id, $args );
 	}
 
 	/**
@@ -635,9 +640,9 @@ abstract class BP_Invitation_Manager {
 	 * @see BP_Invitation::mark_accepted_by_data()
 	 *      for a description of arguments.
 	 */
-	public function mark_accepted( $args ) {
+	public function mark_accepted( $args, $passed_args ) {
 		$args['class'] = $this->class_name;
-		return BP_Invitation::mark_accepted_by_data( $args );
+		return BP_Invitation::mark_accepted_by_data( $args, $passed_args );
 	}
 
 	/** Delete ********************************************************************/

@@ -640,6 +640,12 @@ class BP_Invitation {
 			}
 		}
 
+		// date_modified
+		if ( ! empty( $args['date_modified'] ) ) {
+			$where_clauses['data']['date_modified'] = $args['date_modified'];
+			$where_clauses['format'][] = '%s';
+		}
+
 		return $where_clauses;
 	}
 
@@ -968,9 +974,11 @@ class BP_Invitation {
 	 *
 	 * @since 5.0.0
 	 *
-	 * @param int $id The ID of the invitation to mark as sent.
+	 * @param int   $id   The ID of the invitation to mark as sent.
+ 	 * @param array $args Invitation characteristics used
+ 	 *                    to override certain sending behaviors.
 	 */
-	public static function mark_sent( $id = 0 ) {
+	public static function mark_sent( $id = 0, $args = array() ) {
 
 		if ( ! $id ) {
 			return false;
@@ -978,8 +986,13 @@ class BP_Invitation {
 
 		// Values to be updated.
 		$update_args = array(
-			'invite_sent' => 'sent',
+			'invite_sent'   => 'sent',
+			'date_modified' => bp_core_current_time(),
 		);
+		// Respect a specified `date-modified`
+		if ( ! empty( $args['date_modified'] ) ) {
+			$update_args['date_modified'] = $args['date_modified'];
+		}
 
 		// WHERE clauses.
 		$where_args = array(
@@ -995,14 +1008,21 @@ class BP_Invitation {
 	 *
 	 * @since 5.0.0
 	 *
- 	 * @param array $args See BP_Invitation::update().
+ 	 * @param array $args        See BP_Invitation::update().
+ 	 * @param array $passed_args Invitation characteristics used
+ 	 *                           to override certain sending behaviors.
 	 */
-	public static function mark_sent_by_data( $args ) {
+	public static function mark_sent_by_data( $args, $passed_args = array() ) {
 
 		// Values to be updated.
 		$update_args = array(
-			'invite_sent' => 'sent',
+			'invite_sent'   => 'sent',
+			'date_modified' => bp_core_current_time(),
 		);
+		// Respect a specified `date-modified`
+		if ( ! empty( $passed_args['date_modified'] ) ) {
+			$update_args['date_modified'] = $passed_args['date_modified'];
+		}
 
 		return self::update( $update_args, $args );
 	}
@@ -1014,9 +1034,11 @@ class BP_Invitation {
 	 *
 	 * @since 5.0.0
 	 *
-	 * @param int $id The ID of the invitation to mark as sent.
+	 * @param int   $id   The ID of the invitation to mark as sent.
+ 	 * @param array $args Invitation characteristics used
+ 	 *                    to override certain acceptance behaviors.
 	 */
-	public static function mark_accepted( $id = 0 ) {
+	public static function mark_accepted( $id = 0, $args = array() ) {
 
 		if ( ! $id ) {
 			return false;
@@ -1024,8 +1046,13 @@ class BP_Invitation {
 
 		// Values to be updated.
 		$update_args = array(
-			'accepted' => 'accepted',
+			'accepted'      => 'accepted',
+			'date_modified' => bp_core_current_time(),
 		);
+		// Respect a specified `date-modified`
+		if ( ! empty( $args['date_modified'] ) ) {
+			$update_args['date_modified'] = $args['date_modified'];
+		}
 
 		// WHERE clauses.
 		$where_args = array(
@@ -1041,14 +1068,21 @@ class BP_Invitation {
 	 *
 	 * @since 5.0.0
 	 *
- 	 * @param array $args See BP_Invitation::update().
+ 	 * @param array $args        See BP_Invitation::update().
+  	 * @param array $passed_args Invitation characteristics used
+ 	 *                           to override certain acceptance behaviors.
 	 */
-	public static function mark_accepted_by_data( $args ) {
+	public static function mark_accepted_by_data( $args, $passed_args = array() ) {
 
 		// Values to be updated.
 		$update_args = array(
-			'accepted' => 'accepted',
+			'accepted'      => 'accepted',
+			'date_modified' => bp_core_current_time(),
 		);
+		// Respect a specified `date-modified`
+		if ( ! empty( $args['date_modified'] ) ) {
+			$update_args['date_modified'] = $args['date_modified'];
+		}
 
 		return self::update( $update_args, $args );
 	}
