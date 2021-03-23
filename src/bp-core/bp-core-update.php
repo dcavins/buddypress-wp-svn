@@ -621,6 +621,8 @@ function bp_update_to_8_0() {
 			'%s',
 		)
 	);
+
+	bp_core_install_nonmember_opt_outs();
 }
 
 /**
