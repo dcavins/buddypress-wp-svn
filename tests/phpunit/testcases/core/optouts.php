@@ -91,7 +91,7 @@
 		$i2 = bp_add_optout( $args );
 
 		$get_args = array(
-			'search_terms'   => 'frost',
+			'search_terms'   => 'one@wpfrost.org',
 			'fields'         => 'ids',
 		);
 		$optouts = bp_get_optouts( $get_args );
