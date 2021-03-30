@@ -562,11 +562,11 @@ class BP_Optout {
 
 		// WHERE.
 		$sql['where'] = self::get_where_sql( array(
-			'id'                 => $r['id'],
-			'email_address_hash' => $r['email_address'],
-			'user_id'            => $r['user_id'],
-			'email_type'         => $r['email_type'],
-			'search_terms'       => $r['search_terms'],
+			'id'            => $r['id'],
+			'email_address' => $r['email_address'],
+			'user_id'       => $r['user_id'],
+			'email_type'    => $r['email_type'],
+			'search_terms'  => $r['search_terms'],
 		) );
 
 		// ORDER BY.
