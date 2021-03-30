@@ -30,7 +30,7 @@ class BP_Optout {
 	public $id;
 
 	/**
-	 * The email address of the user that wishes to opt out of
+	 * The hashed email address of the user that wishes to opt out of
 	 * communications from this site.
 	 *
 	 * @since 8.0.0
@@ -111,10 +111,10 @@ class BP_Optout {
 
 		// Default data and format
 		$data = array(
-			'email_address'     => $this->email_address,
-			'user_id'           => $this->user_id,
-			'email_type'        => sanitize_key( $this->email_type ),
-			'date_modified'     => $this->date_modified,
+			'email_address_hash' => $this->email_address,
+			'user_id'            => $this->user_id,
+			'email_type'         => sanitize_key( $this->email_type ),
+			'date_modified'      => $this->date_modified,
 		);
 		$data_format = array( '%s', '%d', '%s', '%s' );
 
@@ -185,10 +185,10 @@ class BP_Optout {
 			return;
 		}
 
-		$this->email_address     = $optout->email_address;
-		$this->user_id           = (int) $optout->user_id;
-		$this->email_type        = sanitize_key( $optout->email_type );
-		$this->date_modified     = $optout->date_modified;
+		$this->email_address = $optout->email_address_hash;
+		$this->user_id       = (int) $optout->user_id;
+		$this->email_type    = sanitize_key( $optout->email_type );
+		$this->date_modified = $optout->date_modified;
 
 	}
 
@@ -201,7 +201,7 @@ class BP_Optout {
 	 *
 	 * @param array $data {
 	 *     Array of optout data, passed to {@link wpdb::insert()}.
-	 *	   @type string $email_address     The email address of the user that wishes to opt out of
+	 *	   @type string $email_address     The hashed email address of the user that wishes to opt out of
 	 *                                     communications from this site.
 	 *	   @type int    $user_id           The ID of the user that generated the contact that resulted in the opt-out.
 	 * 	   @type string $email_type        The type of email contact that resulted in the opt-out.
@@ -212,6 +212,8 @@ class BP_Optout {
 	 */
 	protected static function _insert( $data = array(), $data_format = array() ) {
 		global $wpdb;
+		// We must hash the email address at insert.
+		$data['email_address_hash'] = wp_hash( $data['email_address_hash'] );
 		return $wpdb->insert( BP_Optout::get_table_name(), $data, $data_format );
 	}
 
@@ -234,6 +236,12 @@ class BP_Optout {
 	 */
 	protected static function _update( $data = array(), $where = array(), $data_format = array(), $where_format = array() ) {
 		global $wpdb;
+
+		// Ensure that a passed email address is hashed.
+		if ( ! empty( $data['email_address_hash'] ) && is_email( $data['email_address_hash'] ) ) {
+			$data['email_address_hash'] = wp_hash( $data['email_address_hash'] );
+		}
+
 		return $wpdb->update( BP_Optout::get_table_name(), $data, $where, $data_format, $where_format );
 	}
 
@@ -288,16 +296,17 @@ class BP_Optout {
 
 			$email_clean = array();
 			foreach ( $emails as $email ) {
-				$email_clean[] = $wpdb->prepare( '%s', $email );
+				$email_hash    = wp_hash( $email );
+				$email_clean[] = $wpdb->prepare( '%s', $email_hash );
 			}
 
-			$email_in = implode( ',', $email_clean );
-			$where_conditions['email_address'] = "email_address IN ({$email_in})";
+			$email_in                          = implode( ',', $email_clean );
+			$where_conditions['email_address'] = "email_address_hash IN ({$email_in})";
 		}
 
 		// user_id.
 		if ( ! empty( $args['user_id'] ) ) {
-			$user_id_in = implode( ',', wp_parse_id_list( $args['user_id'] ) );
+			$user_id_in                  = implode( ',', wp_parse_id_list( $args['user_id'] ) );
 			$where_conditions['user_id'] = "user_id IN ({$user_id_in})";
 		}
 
@@ -320,8 +329,9 @@ class BP_Optout {
 
 		// search_terms.
 		if ( ! empty( $args['search_terms'] ) ) {
-			$search_terms_like = '%' . bp_esc_like( $args['search_terms'] ) . '%';
-			$where_conditions['search_terms'] = $wpdb->prepare( '( email_address LIKE %s )', $search_terms_like );
+			// Matching email_address is an exact match because of the hashing.
+			$search_terms_like                = wp_hash( $args['search_terms'] );
+			$where_conditions['search_terms'] = $wpdb->prepare( '( email_address_hash LIKE %s )', $search_terms_like );
 		}
 
 		// Custom WHERE.
@@ -345,14 +355,22 @@ class BP_Optout {
 	 */
 	protected static function get_order_by_sql( $args = array() ) {
 
-		// Setup local variable.
 		$conditions = array();
 		$retval     = '';
 
 		// Order by.
 		if ( ! empty( $args['order_by'] ) ) {
-			$order_by               = implode( ', ', (array) $args['order_by'] );
-			$conditions['order_by'] = "{$order_by}";
+			$order_by_clean = array();
+			$columns        = array( 'id', 'email_address_hash', 'user_id', 'email_type', 'date_modified' );
+			foreach ( (array) $args['order_by'] as $key => $value ) {
+				if ( in_array( $value, $columns, true ) ) {
+					$order_by_clean[] = $value;
+				}
+			}
+			if ( ! empty( $order_by_clean ) ) {
+				$order_by               = implode( ', ', $order_by_clean );
+				$conditions['order_by'] = "{$order_by}";
+			}
 		}
 
 		// Sort order direction.
@@ -362,7 +380,7 @@ class BP_Optout {
 		}
 
 		// Custom ORDER BY.
-		if ( ! empty( $conditions ) ) {
+		if ( ! empty( $conditions['order_by'] ) ) {
 			$retval = 'ORDER BY ' . implode( ' ', $conditions );
 		}
 
@@ -450,7 +468,7 @@ class BP_Optout {
 
 		// email_address.
 		if ( ! empty( $args['email_address'] ) ) {
-			$where_clauses['data']['email_address'] = $args['email_address'];
+			$where_clauses['data']['email_address_hash'] = $args['email_address'];
 			$where_clauses['format'][] = '%s';
 		}
 
@@ -491,8 +509,6 @@ class BP_Optout {
 	 *     @type string       $search_terms      Term to match against email_address field.
 	 *     @type string       $order_by          Database column to order by.
 	 *     @type string       $sort_order        Either 'ASC' or 'DESC'.
-	 *     @type string       $order_by          Field to order results by.
-	 *     @type string       $sort_order        ASC or DESC.
 	 *     @type int          $page              Number of the current page of results.
 	 *                                           Default: false (no pagination,
 	 *                                           all items).
@@ -539,18 +555,18 @@ class BP_Optout {
 		if ( 'user_ids' === $r['fields'] ) {
 			$sql['fields'] = "DISTINCT o.user_id";
 		} else if ( 'email_addresses' === $r['fields'] ) {
-			$sql['fields'] = "DISTINCT o.email_address";
+			$sql['fields'] = "DISTINCT o.email_address_hash";
 		} else {
 			$sql['fields'] = 'DISTINCT o.id';
 		}
 
 		// WHERE.
 		$sql['where'] = self::get_where_sql( array(
-			'id'                => $r['id'],
-			'email_address'     => $r['email_address'],
-			'user_id'           => $r['user_id'],
-			'email_type'        => $r['email_type'],
-			'search_terms'      => $r['search_terms'],
+			'id'                 => $r['id'],
+			'email_address_hash' => $r['email_address'],
+			'user_id'            => $r['user_id'],
+			'email_type'         => $r['email_type'],
+			'search_terms'       => $r['search_terms'],
 		) );
 
 		// ORDER BY.

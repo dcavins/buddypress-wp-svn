@@ -610,7 +610,7 @@ function bp_core_install_nonmember_opt_outs() {
 	$table_name      = $optouts_class->get_table_name();
 	$sql = "CREATE TABLE {$table_name} (
 		id bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-		email_address varchar(255) NOT NULL,
+		email_address_hash varchar(255) NOT NULL,
 		user_id bigint(20) NOT NULL,
 		email_type varchar(255) NOT NULL,
 		date_modified datetime NOT NULL,

@@ -146,7 +146,7 @@ class BP_Members_Optouts_List_Table extends WP_Users_List_Table {
 		 */
 		return apply_filters( 'bp_members_optouts_list_columns', array(
 			'cb'                       => '<input type="checkbox" />',
-			'email_address'            => __( 'Email Address',    'buddypress' ),
+			'email_address'            => __( 'Email Address Hash',    'buddypress' ),
 			'username'                 => __( 'Email Sender',        'buddypress' ),
 			'user_registered'          => __( 'Email Sender Registered',        'buddypress' ),
 			'email_type'               => __( 'Email Type', 'buddypress' ),
@@ -186,7 +186,7 @@ class BP_Members_Optouts_List_Table extends WP_Users_List_Table {
 	 */
 	public function get_sortable_columns() {
 		return array(
-			'email_address'            => 'email_address',
+			'email_address'            => 'email_address_hash',
 			'username'                 => 'user_id',
 			'email_type'               => 'email_type',
 			'optout_date_modified'     => 'date_modified',
