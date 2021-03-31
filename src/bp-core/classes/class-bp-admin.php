@@ -123,6 +123,7 @@ class BP_Admin {
 		require( $this->admin_dir . 'bp-core-admin-components.php' );
 		require( $this->admin_dir . 'bp-core-admin-slugs.php'      );
 		require( $this->admin_dir . 'bp-core-admin-tools.php'      );
+		require( $this->admin_dir . 'bp-core-admin-optouts.php'    );
 	}
 
 	/**
@@ -299,6 +300,15 @@ class BP_Admin {
 			$this->capability,
 			'bp-tools',
 			'bp_core_admin_tools'
+		);
+
+		$hooks[] = add_submenu_page(
+			$tools_parent,
+			__( 'Manage Opt-outs', 'buddypress' ),
+			__( 'Manage Opt-outs', 'buddypress' ),
+			$this->capability,
+			'bp-optouts',
+			'bp_core_optouts_admin'
 		);
 
 		// For network-wide configs, add a link to (the root site's) Emails screen.

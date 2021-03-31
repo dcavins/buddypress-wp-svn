@@ -1,9 +1,9 @@
 <?php
 /**
- * BuddyPress Members Opt-outs List Table class.
+ * BuddyPress Opt-outs List Table class.
  *
  * @package BuddyPress
- * @subpackage MembersAdminClasses
+ * @subpackage CoreAdminClasses
  * @since 8.0.0
  */
 
@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 8.0.0
  */
-class BP_Members_Optouts_List_Table extends WP_Users_List_Table {
+class BP_Optouts_List_Table extends WP_Users_List_Table {
 
 	/**
 	 * Opt-out count.
@@ -83,22 +83,28 @@ class BP_Members_Optouts_List_Table extends WP_Users_List_Table {
 	}
 
 	/**
-	 * Get the list of views available on this table (e.g. "all", "public").
+	 * Get the list of views available on this table.
 	 *
 	 * @since 8.0.0
 	 */
 	public function views() {
+		if ( is_multisite() && bp_core_do_network_admin() ) {
+			$tools_parent = 'network-tools';
+		} else {
+			$tools_parent = 'tools.php';
+		}
+
 		$url_base = add_query_arg(
 			array(
-				'page' => 'bp-members-optouts',
+				'page' => 'bp-optouts',
 			),
-			bp_get_admin_url( 'users.php' )
+			bp_get_admin_url( $tools_parent )
 		);
 		?>
 
 		<h2 class="screen-reader-text"><?php
 			/* translators: accessibility text */
-			_e( 'Filter optouts list', 'buddypress' );
+			_e( 'Filter opt-outs list', 'buddypress' );
 		?></h2>
 		<ul class="subsubsub">
 			<?php
@@ -110,7 +116,7 @@ class BP_Members_Optouts_List_Table extends WP_Users_List_Table {
 			 * @param string $url_base       Current URL base for view.
 			 * @param array  $active_filters Current filters being requested.
 			 */
-			do_action( 'bp_members_optouts_list_table_get_views', $url_base, $this->active_filters ); ?>
+			do_action( 'bp_optouts_list_table_get_views', $url_base, $this->active_filters ); ?>
 		</ul>
 	<?php
 	}
@@ -144,7 +150,7 @@ class BP_Members_Optouts_List_Table extends WP_Users_List_Table {
 		 *
 		 * @param array $value Array of columns to display.
 		 */
-		return apply_filters( 'bp_members_optouts_list_columns', array(
+		return apply_filters( 'bp_optouts_list_columns', array(
 			'cb'                       => '<input type="checkbox" />',
 			'email_address'            => __( 'Email Address Hash',    'buddypress' ),
 			'username'                 => __( 'Email Sender',        'buddypress' ),
@@ -254,14 +260,20 @@ class BP_Members_Optouts_List_Table extends WP_Users_List_Table {
 
 		$actions = array();
 
+		if ( is_network_admin() ) {
+			$form_url = network_admin_url( 'network-tools' );
+		} else {
+			$form_url = bp_get_admin_url( 'tools.php' );
+		}
+
 		// Delete link.
 		$delete_link = add_query_arg(
 			array(
-				'page'      => 'bp-members-optouts',
+				'page'      => 'bp-optouts',
 				'optout_id' => $optout->id,
 				'action'    => 'delete',
 			),
-			bp_get_admin_url( 'users.php' )
+			$form_url
 		);
 		$actions['delete'] = sprintf( '<a href="%1$s" class="delete">%2$s</a>', esc_url( $delete_link ), __( 'Delete', 'buddypress' ) );
 
@@ -273,7 +285,7 @@ class BP_Members_Optouts_List_Table extends WP_Users_List_Table {
 		 * @param array  $actions Array of actions and corresponding links.
 		 * @param object $optout  The BP_Optout.
 		 */
-		$actions = apply_filters( 'bp_members_optouts_management_row_actions', $actions, $optout );
+		$actions = apply_filters( 'bp_optouts_management_row_actions', $actions, $optout );
 
 		echo $this->row_actions( $actions );
 	}
@@ -366,6 +378,6 @@ class BP_Members_Optouts_List_Table extends WP_Users_List_Table {
 		 * @param string    $column_name The column name.
 		 * @param BP_Optout $optout      BP_Optout object.
 		 */
-		return apply_filters( 'bp_members_optouts_management_custom_column', '', $column_name, $optout );
+		return apply_filters( 'bp_optouts_management_custom_column', '', $column_name, $optout );
 	}
 }
