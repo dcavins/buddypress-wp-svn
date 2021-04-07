@@ -39,7 +39,8 @@ class BP_Members_Component extends BP_Component {
 			buddypress()->plugin_dir,
 			array(
 				'adminbar_myaccount_order' => 20,
-				'search_query_arg' => 'members_search',
+				'search_query_arg'         => 'members_search',
+				'features'                 => array( 'invitations' )
 			)
 		);
 	}
@@ -64,6 +65,7 @@ class BP_Members_Component extends BP_Component {
 			'blocks',
 			'widgets',
 			'cache',
+			'invitations',
 		);
 
 		if ( bp_is_active( 'activity' ) ) {
@@ -136,6 +138,15 @@ class BP_Members_Component extends BP_Component {
 
 			// Theme compatibility.
 			new BP_Registration_Theme_Compat();
+		}
+
+		// Invitations.
+		if ( is_user_logged_in() && bp_is_user_members_invitations() ) {
+			if ( bp_is_user_members_invitations_send_screen() ) {
+				require $this->path . 'bp-members/screens/send-invites.php';
+			} else {
+				require $this->path . 'bp-members/screens/list-invites.php';
+			}
 		}
 	}
 
@@ -232,6 +243,11 @@ class BP_Members_Component extends BP_Component {
 			$bp->profile->slug = 'profile';
 			$bp->profile->id   = 'profile';
 		}
+
+		/** Network Invitations **************************************************
+		 */
+
+		$bp->members->invitations = new stdClass;
 	}
 
 	/**
@@ -466,7 +482,6 @@ class BP_Members_Component extends BP_Component {
 				$sub_nav = array_merge( $sub_nav, $this->get_avatar_cover_image_subnavs() );
 			}
 		}
-
 
 		parent::setup_nav( $main_nav, $sub_nav );
 	}

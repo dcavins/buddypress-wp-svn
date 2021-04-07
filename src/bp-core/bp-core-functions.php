@@ -706,7 +706,7 @@ function bp_core_add_page_mappings( $components, $existing = 'keep' ) {
 
 	// Register and Activate are not components, but need pages when
 	// registration is enabled.
-	if ( bp_get_signup_allowed() ) {
+	if ( bp_get_signup_allowed() || bp_get_members_invitations_allowed()  ) {
 		foreach ( array( 'register', 'activate' ) as $slug ) {
 			if ( ! isset( $pages[ $slug ] ) ) {
 				$pages_to_create[ $slug ] = $page_titles[ $slug ];
@@ -3428,6 +3428,9 @@ function bp_send_email( $email_type, $to, $args = array() ) {
 	// From, subject, content are set automatically.
 	if ( 'settings-verify-email-change' === $email_type && isset( $args['tokens']['displayname'] ) ) {
 		$email->set_to( $to, $args['tokens']['displayname'] );
+	// Emails sent to nonmembers will have no recipient.name populated.
+	} else if ( 'bp-members-invitation' === $email_type ) {
+		$email->set_to( $to, $to );
 	} else {
 		$email->set_to( $to );
 	}
@@ -3763,9 +3766,9 @@ function bp_email_get_schema() {
 			/* translators: do not remove {} brackets or translate its contents. */
 			'post_title'   => __( '[{{{site.name}}}] You have an invitation to the group: "{{group.name}}"', 'buddypress' ),
 			/* translators: do not remove {} brackets or translate its contents. */
-			'post_content' => __( "<a href=\"{{{inviter.url}}}\">{{inviter.name}}</a> has invited you to join the group: &quot;{{group.name}}&quot;.\n{{invite.message}}\n<a href=\"{{{invites.url}}}\">Go here to accept your invitation</a> or <a href=\"{{{group.url}}}\">visit the group</a> to learn more.", 'buddypress' ),
+			'post_content' => __( "<a href=\"{{{inviter.url}}}\">{{inviter.name}}</a> has invited you to join the group: &quot;{{group.name}}&quot;.\n\n{{invite.message}}\n\n<a href=\"{{{invites.url}}}\">Go here to accept your invitation</a> or <a href=\"{{{group.url}}}\">visit the group</a> to learn more.", 'buddypress' ),
 			/* translators: do not remove {} brackets or translate its contents. */
-			'post_excerpt' => __( "{{inviter.name}} has invited you to join the group: \"{{group.name}}\".\n\nTo accept your invitation, visit: {{{invites.url}}}\n\nTo learn more about the group, visit: {{{group.url}}}.\nTo view {{inviter.name}}'s profile, visit: {{{inviter.url}}}", 'buddypress' ),
+			'post_excerpt' => __( "{{inviter.name}} has invited you to join the group: \"{{group.name}}\".\n\n{{invite.message}}\n\nTo accept your invitation, visit: {{{invites.url}}}\n\nTo learn more about the group, visit: {{{group.url}}}.\nTo view {{inviter.name}}'s profile, visit: {{{inviter.url}}}", 'buddypress' ),
 		),
 		'groups-member-promoted' => array(
 			/* translators: do not remove {} brackets or translate its contents. */
@@ -3814,6 +3817,14 @@ function bp_email_get_schema() {
 			'post_content' => __( "Your membership request for the group &quot;<a href=\"{{{group.url}}}\">{{group.name}}</a>&quot; has been rejected.", 'buddypress' ),
 			/* translators: do not remove {} brackets or translate its contents. */
 			'post_excerpt' => __( "Your membership request for the group \"{{group.name}}\" has been rejected.\n\nTo request membership again, visit: {{{group.url}}}", 'buddypress' ),
+		),
+		'bp-members-invitation' => array(
+			/* translators: do not remove {} brackets or translate its contents. */
+			'post_title'   => __( '{{inviter.name}} has invited you to join {{site.name}}', 'buddypress' ),
+			/* translators: do not remove {} brackets or translate its contents. */
+			'post_content' => __( "<a href=\"{{{inviter.url}}}\">{{inviter.name}}</a> has invited you to join the site: &quot;{{site.name}}&quot;.\n\n{{usermessage}}\n\n<a href=\"{{{invite.accept_url}}}\">Accept your invitation</a> or <a href=\"{{{site.url}}}\">visit the site</a> to learn more.", 'buddypress' ),
+			/* translators: do not remove {} brackets or translate its contents. */
+			'post_excerpt' => __( "{{inviter.name}} has invited you to join the site: \"{{site.name}}\".\n\n{{usermessage}}\n\nTo accept your invitation, visit: {{{invite.accept_url}}}\n\nTo learn more about the site, visit: {{{site.url}}}.\nTo view {{inviter.name}}'s profile, visit: {{{inviter.url}}}", 'buddypress' ),
 		),
 	) );
 }
@@ -3956,6 +3967,14 @@ function bp_email_get_type_schema( $field = 'description' ) {
 		),
 	);
 
+	$members_invitation = array(
+		'description'	=> __( 'A site member has sent a site invitation to the recipient.', 'buddypress' ),
+		'unsubscribe'	=> array(
+			'meta_key'	=> 'notification_bp_members_invite',
+			'message'	=> __( 'You will no longer receive emails when you are invited to join a site.', 'buddypress' ),
+		),
+	);
+
 	$types = array(
 		'activity-comment'                   => $activity_comment,
 		'activity-comment-author'            => $activity_comment_author,
@@ -3973,6 +3992,7 @@ function bp_email_get_type_schema( $field = 'description' ) {
 		'settings-verify-email-change'       => $settings_verify_email_change,
 		'groups-membership-request-accepted' => $groups_membership_request_accepted,
 		'groups-membership-request-rejected' => $groups_membership_request_rejected,
+		'bp-members-invitation'              => $members_invitation,
 	);
 
 	if ( $field !== 'all' ) {
@@ -3992,10 +4012,17 @@ function bp_email_unsubscribe_handler() {
 	$raw_email_type = ! empty( $_GET['nt'] ) ? $_GET['nt'] : '';
 	$raw_hash       = ! empty( $_GET['nh'] ) ? $_GET['nh'] : '';
 	$raw_user_id    = ! empty( $_GET['uid'] ) ? absint( $_GET['uid'] ) : 0;
-	$new_hash       = hash_hmac( 'sha1', "{$raw_email_type}:{$raw_user_id}", bp_email_get_salt() );
+	$raw_user_email = ! empty( $_GET['uem'] ) ? $_GET['uem'] : '';
+
+	$new_hash = '';
+	if ( ! empty( $raw_user_id ) ) {
+		$new_hash = hash_hmac( 'sha1', "{$raw_email_type}:{$raw_user_id}", bp_email_get_salt() );
+	} else if ( ! empty( $raw_user_email ) ) {
+		$new_hash = hash_hmac( 'sha1', "{$raw_email_type}:{$raw_user_email}", bp_email_get_salt() );
+	}
 
 	// Check required values.
-	if ( ! $raw_user_id || ! $raw_email_type || ! $raw_hash || ! array_key_exists( $raw_email_type, $emails ) ) {
+	if ( ( ! $raw_user_id && ! $raw_user_email ) || ! $raw_email_type || ! $raw_hash || ! array_key_exists( $raw_email_type, $emails ) ) {
 		$redirect_to = wp_login_url();
 		$result_msg  = __( 'Something has gone wrong.', 'buddypress' );
 		$unsub_msg   = __( 'Please log in and go to your settings to unsubscribe from notification emails.', 'buddypress' );
@@ -4021,6 +4048,16 @@ function bp_email_unsubscribe_handler() {
 			$redirect_to = bp_core_get_user_domain( get_current_user_id() );
 		}
 
+	// This is an unsubscribe request from a nonmember.
+	} else if ( $raw_user_email ) {
+		// Unsubscribe.
+		error_log( 'caught unsubscribe request {$raw_user_email}' );
+		// @TODO: Create opt-out once opt-out logic is in place.
+		$redirect_to = home_url();
+
+		$result_msg = $emails[ $raw_email_type ]['unsubscribe']['message'];
+		$unsub_msg  = __( 'You have been unsubscribed.' );
+	// This is an unsubscribe request from a current member.
 	} else {
 		if ( bp_is_active( 'settings' ) ) {
 			$redirect_to = sprintf(
@@ -4048,7 +4085,13 @@ function bp_email_unsubscribe_handler() {
 	);
 
 	bp_core_add_message( $message );
-	bp_core_redirect( bp_core_get_user_domain( $raw_user_id ) );
+
+	$page_redirect = '';
+	if ( $raw_user_id  ) {
+		$page_redirect = bp_core_get_user_domain( $raw_user_id );
+	}
+
+	bp_core_redirect();
 
 	exit;
 }
@@ -4065,6 +4108,7 @@ function bp_email_unsubscribe_handler() {
  *    @type string $notification_type Which notification type is being sent.
  *    @type string $user_id           The ID of the user to whom the notification is sent.
  *    @type string $redirect_to       Optional. The url to which the user will be redirected. Default is the activity directory.
+ *    @type string $email             Optional. The email address of the user to whom the notification is sent.
  * }
  * @return string The unsubscribe link.
  */
@@ -4084,15 +4128,32 @@ function bp_email_get_unsubscribe_link( $args ) {
 		return '';
 	}
 
-	$link = add_query_arg(
-		array(
-			'action' => 'unsubscribe',
-			'nh'     => hash_hmac( 'sha1', "{$email_type}:{$user_id}", bp_email_get_salt() ),
-			'nt'     => $args['notification_type'],
-			'uid'    => $user_id,
-		),
-		$redirect_to
-	);
+	$link = '';
+	// Case where the recipient is a member of the site.
+	if ( ! empty( $user_id ) ) {
+		$link = add_query_arg(
+			array(
+				'action' => 'unsubscribe',
+				'nh'     => hash_hmac( 'sha1', "{$email_type}:{$user_id}", bp_email_get_salt() ),
+				'nt'     => $args['notification_type'],
+				'uid'    => $user_id,
+			),
+			$redirect_to
+		);
+	// Case where the recipient is not a member of the site.
+	} else if ( ! empty( $args['email_address'] ) ) {
+		$email_address = $args['email_address'];
+		$link = add_query_arg(
+			array(
+				'action' => 'unsubscribe',
+				'nh'     => hash_hmac( 'sha1', "{$email_type}:{$email_address}", bp_email_get_salt() ),
+				'nt'     => $args['notification_type'],
+				'uid'    => $user_id,
+				'uem'    => $email_address,
+			),
+			$redirect_to
+		);
+	}
 
 	/**
 	 * Filters the unsubscribe link.

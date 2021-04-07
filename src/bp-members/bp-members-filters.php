@@ -127,3 +127,128 @@ function bp_members_edit_profile_url( $url, $user_id, $scheme = 'admin' ) {
 	return apply_filters( 'bp_members_edit_profile_url', $profile_link, $url, $user_id, $scheme );
 }
 add_filter( 'edit_profile_url', 'bp_members_edit_profile_url', 10, 3 );
+
+/**
+ * Filter the bp_user_can value to determine what the user can do in the members component.
+ *
+ * @since 8.0.0
+ *
+ * @param bool   $retval     Whether or not the current user has the capability.
+ * @param int    $user_id
+ * @param string $capability The capability being checked for.
+ * @param int    $site_id    Site ID. Defaults to the BP root blog.
+ * @param array  $args       Array of extra arguments passed.
+ *
+ * @return bool
+ */
+function bp_members_user_can_filter( $retval, $user_id, $capability, $site_id, $args ) {
+
+	switch ( $capability ) {
+		case 'bp_members_manage_membership_requests':
+			$retval = bp_user_can( $user_id, 'bp_moderate' );
+			break;
+		case 'bp_members_send_invitation':
+			// @todo Add restrictions?
+			if ( bp_get_members_invitations_allowed() ) {
+				$retval = true;
+			}
+			break;
+		case 'bp_members_receive_invitation':
+			if ( bp_get_members_invitations_allowed() ) {
+				$retval = true;
+				// The invited user must not already be a member of the network.
+				if ( empty( $args['invitee_email'] ) || false !== get_user_by( 'email', $args['invitee_email'] ) ) {
+					$retval = false;
+				}
+			// @TODO: The invited user must not have opted out from receiving invitations.
+			}
+
+			break;
+	}
+
+	return $retval;
+
+}
+add_filter( 'bp_user_can', 'bp_members_user_can_filter', 10, 5 );
+
+/**
+ * Do not allow the new user to change the email address
+ * if they are accepting a community invitation.
+ *
+ * @since 8.0.0
+ *
+ * @param array  $attributes The field attributes.
+ * @param string $name       The field name.
+ *
+ * @return array $attributes The field attributes.
+ */
+function bp_members_invitations_make_registration_email_input_readonly_if_invite( $attributes, $name ) {
+	if ( 'email' === $name && bp_get_members_invitations_allowed() ) {
+		$invite = bp_get_members_invitation_from_request();
+		if ( $invite->id ) {
+			$attributes['readonly'] = 'readonly';
+		}
+	}
+	return $attributes;
+}
+add_filter( 'bp_get_form_field_attributes', 'bp_members_invitations_make_registration_email_input_readonly_if_invite', 10, 2 );
+
+/**
+ * Provide a more-specific welcome message if the new user
+ * is accepting a network invitation.
+ *
+ * @since 8.0.0
+ *
+ * @return string $message The message text.
+ */
+function bp_members_invitations_get_registration_welcome_message() {
+	$message = '';
+	if ( ! bp_get_members_invitations_allowed() ) {
+		return $message;
+	}
+	$invite = bp_get_members_invitation_from_request();
+	if ( ! $invite->id ) {
+		return $message;
+	}
+
+	// Fetch the display names of all inviters to personalize the welcome message.
+	$all_invites = bp_members_invitations_get_invites(
+		array(
+			'invitee_email' => $invite->invitee_email,
+			'invite_sent'   => 'sent',
+		)
+	);
+	$inviters = array();
+	foreach ( $all_invites as $inv ) {
+		$inviters[] = bp_core_get_user_displayname( $inv->inviter_id );
+	}
+
+	if ( ! empty( $inviters ) ) {
+		$message = sprintf( _n( 'Welcome! You&#8217;ve been invited to join the site by the following user: %s. ', 'Welcome! You&#8217;ve been invited to join the site by the following users: %s. ', count( $inviters ), 'buddypress' ), implode( ', ', $inviters ) );
+	} else {
+		$message = __( 'Welcome! You&#8217;ve been invited to join the site. ', 'buddypress' );
+	}
+	return $message;
+}
+
+/**
+ * Provide a more-specific "registration is disabled" message
+ * if registration is available by invitation only.
+ * Also provide failure note if new user is trying to accept
+ * a network invitation but there's a problem.
+ *
+ * @since 8.0.0
+ *
+ * @return string $message The message text.
+ */
+function bp_members_invitations_get_modified_registration_disabled_message() {
+	$message = '';
+	if ( bp_get_members_invitations_allowed() ) {
+		$message = __( 'Member registration is allowed by invitation only.', 'buddypress' );
+		// Is the user trying to accept an invitation but something is wrong?
+		if ( ! empty( $_GET['inv'] ) ) {
+			$message .= __( ' It looks like there is a problem with your invitation. Please try again.', 'buddypress' );
+		}
+	}
+	return $message;
+}
