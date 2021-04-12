@@ -252,3 +252,44 @@ function bp_members_invitations_get_modified_registration_disabled_message() {
 	}
 	return $message;
 }
+
+/**
+ * Sanitize the invitation property output.
+ *
+ * @since 8.0.0
+ *
+ * @param int|string $value    The value for the requested property.
+ * @param string     $property The name of the requested property.
+ * @param string     $context  The context of display.
+ * @return int|string          The sanitized value.
+ */
+function bp_members_sanitize_invitation_property( $value = '', $property = '', $context = 'html' ) {
+	if ( ! $property ) {
+		return '';
+	}
+
+	switch ( $property ) {
+		case 'id':
+		case 'user_id':
+		case 'item_id':
+		case 'secondary_item_id':
+		case 'invite_sent':
+		case 'accepted':
+			$value = absint( $value );
+			break;
+		case 'invitee_email':
+			$value = sanitize_email( $value );
+			break;
+		case 'content':
+			$value = wp_kses( $value, array() );
+			$value = wptexturize( $value );
+			break;
+
+		default:
+			$value = 'attribute' === $context ? esc_attr( $value ) : esc_html( $value );
+			break;
+	}
+
+	return $value;
+}
+add_filter( 'bp_the_members_invitation_property', 'bp_members_sanitize_invitation_property', 10, 3 );

@@ -660,6 +660,8 @@ function bp_nouveau_member_template_part() {
 			$template = 'profile';
 		} elseif ( bp_is_user_notifications() ) {
 			$template = 'notifications';
+		} elseif ( bp_is_user_members_invitations() ) {
+			$template = 'invitations';
 		} elseif ( bp_is_user_settings() ) {
 			$template = 'settings';
 		}

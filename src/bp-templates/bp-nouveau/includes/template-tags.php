@@ -3,7 +3,7 @@
  * Common template tags
  *
  * @since 3.0.0
- * @version 7.0.0
+ * @version 8.0.0
  */
 
 // Exit if accessed directly.
@@ -2634,14 +2634,19 @@ function bp_nouveau_submit_button( $action, $object_id = 0 ) {
 		printf( '<div class="submit">%s</div>', $submit_input );
 	}
 
+	$nonce = $submit_data['nonce'];
+	if ( isset( $submit_data['nonce_placeholder_value'] ) ) {
+		$nonce = sprintf( $nonce, $submit_data['nonce_placeholder_value'] );
+	}
+
 	if ( empty( $submit_data['nonce_key'] ) ) {
-		wp_nonce_field( $submit_data['nonce'] );
+		wp_nonce_field( $nonce );
 	} else {
 		if ( $object_id ) {
 			$submit_data['nonce_key'] .= '_' . (int) $object_id;
 		}
 
-		wp_nonce_field( $submit_data['nonce'], $submit_data['nonce_key'] );
+		wp_nonce_field( $nonce, $submit_data['nonce_key'] );
 	}
 
 	if ( ! empty( $submit_data['after'] ) ) {
