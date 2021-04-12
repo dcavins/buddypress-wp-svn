@@ -3018,12 +3018,18 @@ class BP_Members_Admin {
 					'id'          => $ids,
 					'invite_sent' => 'all',
 					'accepted'    => 'all',
-					'fields'      => 'ids',
 				);
-				$invite_ids = bp_members_invitations_get_invites( $args );
+				$invites    = bp_members_invitations_get_invites( $args );
+				$invite_ids = wp_list_pluck( $invites, 'id' );
 
 				$header_text = __( 'Delete Invitations', 'buddypress' );
-				if ( 1 == count( $invite_ids ) ) {
+				if ( 0 === count( $invite_ids ) ) {
+					$helper_text = __( 'No invites were found, nothing to delete!', 'buddypress' );
+
+					/**
+					 * @todo You should probably use `_n()` otherwise.
+					 */
+				} elseif ( 1 === count( $invite_ids ) ) {
 					$helper_text = __( 'You are about to delete the following invitation:', 'buddypress' );
 				} else {
 					$helper_text = __( 'You are about to delete the following invitations:', 'buddypress' );
@@ -3044,7 +3050,13 @@ class BP_Members_Admin {
 				$invite_ids = wp_list_pluck( $invites, 'id' );
 
 				$header_text = __( 'Resend Invitation Emails', 'buddypress' );
-				if ( 1 == count( $invite_ids ) ) {
+				if ( 0 === count( $invite_ids ) ) {
+					$helper_text = __( 'No pending invites were found, nothing to resend!', 'buddypress' );
+
+					/**
+					 * @todo You should probably use `_n()` otherwise.
+					 */
+				} elseif ( 1 === count( $invite_ids ) ) {
 					$helper_text = __( 'You are about to resend an invitation email to the following address:', 'buddypress' );
 				} else {
 					$helper_text = __( 'You are about to resend an invitation email to the following addresses:', 'buddypress' );
@@ -3084,33 +3096,37 @@ class BP_Members_Admin {
 
 			<p><?php echo esc_html( $helper_text ); ?></p>
 
-			<ol class="bp-invitations-list">
-			<?php foreach ( $invites as $invite ) :
-				if ( $invite->invite_sent ) {
-					$last_notified = mysql2date( 'Y/m/d g:i:s a', $invite->date_modified );
-				} else {
-					$last_notified = __( 'Not yet notified', 'buddypress');
-				}
-				?>
+			<?php if ( $invites ) : ?>
 
-				<li>
-					<strong><?php echo esc_html( $invite->invitee_email ) ?></strong>
+				<ol class="bp-invitations-list">
+					<?php foreach ( $invites as $invite ) :
+						if ( $invite->invite_sent ) {
+							$last_notified = mysql2date( 'Y/m/d g:i:s a', $invite->date_modified );
+						} else {
+							$last_notified = __( 'Not yet notified', 'buddypress');
+						}
+						?>
 
-					<?php if ( 'resend' == $action ) : ?>
+						<li>
+							<strong><?php echo esc_html( $invite->invitee_email ) ?></strong>
 
-						<p class="description">
-							<?php
-							/* translators: %s: notification date */
-							printf( esc_html__( 'Last notified: %s', 'buddypress'), $last_notified );
-							?>
-						</p>
+							<?php if ( 'resend' == $action ) : ?>
 
-					<?php endif; ?>
+								<p class="description">
+									<?php
+									/* translators: %s: notification date */
+									printf( esc_html__( 'Last notified: %s', 'buddypress'), $last_notified );
+									?>
+								</p>
 
-				</li>
+							<?php endif; ?>
 
-			<?php endforeach; ?>
-			</ol>
+						</li>
+
+					<?php endforeach; ?>
+				</ol>
+
+			<?php endif ; ?>
 
 			<?php if ( 'delete' === $action ) : ?>
 
@@ -3118,7 +3134,7 @@ class BP_Members_Admin {
 
 			<?php endif ; ?>
 
-			<a class="button-primary" href="<?php echo esc_url( $action_url ); ?>"><?php esc_html_e( 'Confirm', 'buddypress' ); ?></a>
+			<a class="button-primary" href="<?php echo esc_url( $action_url ); ?>" <?php disabled( ! $invites ); ?>><?php esc_html_e( 'Confirm', 'buddypress' ); ?></a>
 			<a class="button" href="<?php echo esc_url( $cancel_url ); ?>"><?php esc_html_e( 'Cancel', 'buddypress' ) ?></a>
 		</div>
 
