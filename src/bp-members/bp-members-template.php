@@ -3083,12 +3083,29 @@ function bp_members_invitations_pagination_links() {
 	}
 
 /**
- * Output the ID of the invitation currently being iterated on.
+ * Output the requested property of the invitation currently being iterated on.
  *
  * @since 8.0.0
+ *
+ * @param string $property The name of the property to display.
+ * @param string $context  The context of display.
+ *                         Possible values are 'attribute' and 'html'.
  */
-function bp_the_members_invitation_property( $property ) {
-	echo bp_get_the_members_invitation_property( $property );
+function bp_the_members_invitation_property( $property = '', $context = 'html' ) {
+	if ( ! $property ) {
+		return;
+	}
+
+	/**
+	 * Use this filter to sanitize the output.
+	 *
+	 * @since 8.0.0
+	 *
+	 * @param int|string $value    The value for the requested property.
+	 * @param string     $property The name of the requested property.
+	 * @param string     $context  The context of display.
+	 */
+	echo apply_filters( 'bp_the_members_invitation_property', bp_get_the_members_invitation_property( $property ), $property, $context );
 }
 	/**
 	 * Return the value for a property of the network invitation currently being iterated on.

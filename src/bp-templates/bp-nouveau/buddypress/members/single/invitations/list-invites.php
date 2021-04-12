@@ -1,9 +1,8 @@
 <?php
 /**
- * BuddyPress - Sent Membership Invitations
+ * BuddyPress - Pending Membership Invitations
  *
- * @package BuddyPress
- * @subpackage bp-legacy
+ * @since 8.0.0
  * @version 8.0.0
  */
 ?>
@@ -41,6 +40,6 @@
 
 <?php else : ?>
 
-	<p><?php esc_html_e( 'There are no invitations to display.', 'buddypress' ); ?></p>
+	<?php bp_nouveau_user_feedback( 'member-invites-none' ); ?>
 
 <?php endif;
