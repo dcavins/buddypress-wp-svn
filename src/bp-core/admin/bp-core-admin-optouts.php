@@ -315,17 +315,18 @@ function bp_core_optouts_admin_index() {
 	?>
 
 	<div class="wrap">
-		<h1 class="wp-heading-inline"><?php _e( 'Nonmember Opt-outs', 'buddypress' ); ?></h1>
+		<h1 class="wp-heading-inline"><?php esc_html_e( 'BuddyPress tools', 'buddypress' ); ?></h1>
+		<hr class="wp-header-end">
+
+		<h2 class="nav-tab-wrapper"><?php bp_core_admin_tabs( __( 'Manage Opt-outs', 'buddypress' ), 'tools' ); ?></h2>
 
 		<?php
 		if ( $usersearch ) {
 			$num_results = (int) $bp_optouts_list_table->total_items;
-			printf( '<span class="subtitle">' . esc_html( _n( 'Opt-out with an email address matching &#8220;%s&#8221;', 'Opt-outs with an email address matching &#8220;%s&#8221;', $num_results, 'buddypress' ) ) . '</span>', esc_html( $usersearch ) );
+			printf( '<p><span class="subtitle">' . esc_html( _n( 'Opt-out with an email address matching &#8220;%s&#8221;', 'Opt-outs with an email address matching &#8220;%s&#8221;', $num_results, 'buddypress' ) ) . '</span></p>', esc_html( $usersearch ) );
 		}
 		?>
-		<p class="description"><?php esc_html_e( 'This table shows opt-out requests from people who are not members of this site, but have been contacted via communication from this site, and wish to receive no further communications.', 'buddypress' ); ?></p>
-
-		<hr class="wp-header-end">
+		<p><?php esc_html_e( 'This table shows opt-out requests from people who are not members of this site, but have been contacted via communication from this site, and wish to receive no further communications.', 'buddypress' ); ?></p>
 
 		<?php // Display each opt-out on its own row. ?>
 		<?php $bp_optouts_list_table->views(); ?>
@@ -379,7 +380,6 @@ function bp_core_optouts_admin_manage( $action = '' ) {
 	// Check optout IDs and set up strings.
 	switch ( $action ) {
 		case 'delete' :
-			$header_text = __( 'Delete optouts', 'buddypress' );
 			if ( 1 == count( $optouts ) ) {
 				$helper_text = __( 'You are about to delete the following opt-out request:', 'buddypress' );
 			} else {
@@ -415,8 +415,10 @@ function bp_core_optouts_admin_manage( $action = '' ) {
 	?>
 
 	<div class="wrap">
-		<h1 class="wp-heading-inline"><?php echo esc_html( $header_text ); ?></h1>
+		<h1 class="wp-heading-inline"><?php esc_html_e( 'BuddyPress tools', 'buddypress' ); ?></h1>
 		<hr class="wp-header-end">
+
+		<h2 class="nav-tab-wrapper"><?php bp_core_admin_tabs( __( 'Manage Opt-outs', 'buddypress' ), 'tools' ); ?></h2>
 
 		<p><?php echo esc_html( $helper_text ); ?></p>
 

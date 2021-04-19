@@ -533,9 +533,6 @@ class BP_Admin {
 		// About and Credits pages.
 		remove_submenu_page( 'index.php', 'bp-about'   );
 		remove_submenu_page( 'index.php', 'bp-credits' );
-
-		// Nonmembers Opt-outs page.
-		remove_submenu_page( 'tools.php', 'bp-optouts' );
 	}
 
 	/**
