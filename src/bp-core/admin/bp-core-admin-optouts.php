@@ -176,7 +176,7 @@ function bp_core_get_optouts_notice() {
 		if ( ! empty( $_REQUEST['deleted'] ) ) {
 			$notice['message'] .= sprintf(
 				/* translators: %s: number of deleted optouts */
-				_nx( '%s optout successfully deleted!', '%s optouts successfully deleted!',
+				_nx( '%s opt-out successfully deleted!', '%s opt-outs successfully deleted!',
 				 absint( $_REQUEST['deleted'] ),
 				 'nonmembers optout deleted',
 				 'buddypress'
@@ -188,7 +188,7 @@ function bp_core_get_optouts_notice() {
 		if ( ! empty( $_REQUEST['notdeleted'] ) ) {
 			$notice['message'] .= sprintf(
 				/* translators: %s: number of optouts that failed to be deleted */
-				_nx( '%s optout was not deleted.', '%s optouts were not deleted.',
+				_nx( '%s opt-out was not deleted.', '%s opt-outs were not deleted.',
 				 absint( $_REQUEST['notdeleted'] ),
 				 'nonmembers optout not deleted',
 				 'buddypress'
@@ -206,7 +206,7 @@ function bp_core_get_optouts_notice() {
 	if ( ! empty( $_REQUEST['error'] ) && 'do_delete' === $_REQUEST['error'] ) {
 		$notice = array(
 			'class'   => 'error',
-			'message' => esc_html__( 'There was a problem deleting optouts. Please try again.', 'buddypress' ),
+			'message' => esc_html__( 'There was a problem deleting opt-outs. Please try again.', 'buddypress' ),
 		);
 	}
 

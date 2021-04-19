@@ -224,7 +224,7 @@ class BP_Optout {
 	 *
 	 * @see wpdb::update() for further description of paramater formats.
 	 *
-	 * @param array $data         Array of optout data to update, passed to
+	 * @param array $data         Array of opt-out data to update, passed to
 	 *                            {@link wpdb::update()}. Accepts any property of a
 	 *                            BP_optout object.
 	 * @param array $where        The WHERE params as passed to wpdb::update().
@@ -706,7 +706,7 @@ class BP_Optout {
 		 * @since 8.0.0
 		 *
 		 * @param array $where_args  Associative array of columns/values describing
-		 *                           optouts about to be deleted.
+		 *                           opt-outs about to be deleted.
 		 * @param array $update_args Array of new values.
 		 */
 		do_action( 'bp_optout_before_update', $where_args, $update_args );
@@ -727,7 +727,7 @@ class BP_Optout {
 		 * @since 8.0.0
 		 *
 		 * @param array $where_args  Associative array of columns/values describing
-		 *                           optouts about to be deleted.
+		 *                           opt-outs about to be deleted.
 		 * @param array $update_args Array of new values.
 		 */
 		do_action( 'bp_optout_after_update', $where_args, $update_args );
@@ -752,11 +752,11 @@ class BP_Optout {
 		$where = self::get_query_clauses( $args );
 
 		/**
-		 * Fires before an optout is deleted.
+		 * Fires before an opt-out is deleted.
 		 *
 		 * @since 8.0.0
 		 *
-		 * @param array $args Characteristics of the optouts to be deleted.
+		 * @param array $args Characteristics of the opt-outs to be deleted.
 		 */
 		do_action( 'bp_optout_before_delete', $args );
 
@@ -771,11 +771,11 @@ class BP_Optout {
 		$retval = self::_delete( $where['data'], $where['format'] );
 
 		/**
-		 * Fires after an optout is deleted.
+		 * Fires after an opt-out is deleted.
 		 *
 		 * @since 8.0.0
 		 *
-		 * @param array $args Characteristics of the optouts just deleted.
+		 * @param array $args Characteristics of the opt-outs just deleted.
 		 */
 		do_action( 'bp_optout_after_delete', $args );
 
@@ -806,14 +806,14 @@ class BP_Optout {
 	}
 
 	/**
-	 * Delete a single optout by ID.
+	 * Delete a single opt-out by ID.
 	 *
 	 * @since 8.0.0
 	 *
 	 * @see BP_optout::delete() for explanation of
 	 *      return value.
 	 *
-	 * @param int $id ID of the optout item to be deleted.
+	 * @param int $id ID of the opt-out item to be deleted.
 	 * @return bool True on success, false on failure.
 	 */
 	public static function delete_by_id( $id ) {
