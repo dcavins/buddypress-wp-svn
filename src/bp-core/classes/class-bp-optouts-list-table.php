@@ -201,7 +201,6 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 	 */
 	public function get_sortable_columns() {
 		return array(
-			'email_address'        => 'email_address_hash',
 			'username'             => 'user_id',
 			'email_type'           => 'email_type',
 			'optout_date_modified' => 'date_modified',

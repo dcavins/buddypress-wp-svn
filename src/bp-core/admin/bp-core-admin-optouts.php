@@ -65,7 +65,7 @@ function bp_core_optouts_admin_load() {
 				'content' =>
 					'<p>' . __( 'This is the administration screen for nonmember opt-outs on your site.', 'buddypress' ) . '</p>' .
 					'<p>' . __( 'From the screen options, you can customize the displayed columns and the pagination of this screen.', 'buddypress' ) . '</p>' .
-					'<p>' . __( 'You can reorder the list of opt-outs by clicking on the Email Address, User Who Contacted, Email Type or Date Modified column headers.', 'buddypress' ) . '</p>' .
+					'<p>' . __( 'You can reorder the list of opt-outs by clicking on the Email Sender, Email Type or Date Modified column headers.', 'buddypress' ) . '</p>' .
 					'<p>' . __( 'Using the search form, you can search for an opt-out to a specific email address.', 'buddypress' ) . '</p>',
 			)
 		);
