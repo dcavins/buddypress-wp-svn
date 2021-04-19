@@ -282,7 +282,7 @@ class BP_Optout {
 
 		// id.
 		if ( false !== $args['id'] ) {
-			$id_in = implode( ',', wp_parse_id_list( $args['id'] ) );
+			$id_in                  = implode( ',', wp_parse_id_list( $args['id'] ) );
 			$where_conditions['id'] = "id IN ({$id_in})";
 		}
 
@@ -323,7 +323,7 @@ class BP_Optout {
 				$et_clean[] = $wpdb->prepare( '%s', sanitize_key( $et ) );
 			}
 
-			$et_in = implode( ',', $et_clean );
+			$et_in                          = implode( ',', $et_clean );
 			$where_conditions['email_type'] = "email_type IN ({$et_in})";
 		}
 
@@ -463,25 +463,25 @@ class BP_Optout {
 		// id.
 		if ( ! empty( $args['id'] ) ) {
 			$where_clauses['data']['id'] = absint( $args['id'] );
-			$where_clauses['format'][] = '%d';
+			$where_clauses['format'][]   = '%d';
 		}
 
 		// email_address.
 		if ( ! empty( $args['email_address'] ) ) {
 			$where_clauses['data']['email_address_hash'] = $args['email_address'];
-			$where_clauses['format'][] = '%s';
+			$where_clauses['format'][]                   = '%s';
 		}
 
 		// user_id.
 		if ( ! empty( $args['user_id'] ) ) {
 			$where_clauses['data']['user_id'] = absint( $args['user_id'] );
-			$where_clauses['format'][] = '%d';
+			$where_clauses['format'][]        = '%d';
 		}
 
 		// email_type.
 		if ( ! empty( $args['email_type'] ) ) {
 			$where_clauses['data']['email_type'] = $args['email_type'];
-			$where_clauses['format'][] = '%s';
+			$where_clauses['format'][]           = '%s';
 		}
 
 		return $where_clauses;
@@ -530,18 +530,22 @@ class BP_Optout {
 		$optouts_table_name = BP_Optout::get_table_name();
 
 		// Parse the arguments.
-		$r  = bp_parse_args( $args, array(
-			'id'                => false,
-			'email_address'     => false,
-			'user_id'           => false,
-			'email_type'        => false,
-			'search_terms'      => '',
-			'order_by'          => false,
-			'sort_order'        => false,
-			'page'              => false,
-			'per_page'          => false,
-			'fields'            => 'all',
-		), 'bp_optout_get' );
+		$r = bp_parse_args(
+			$args,
+			array(
+				'id'            => false,
+				'email_address' => false,
+				'user_id'       => false,
+				'email_type'    => false,
+				'search_terms'  => '',
+				'order_by'      => false,
+				'sort_order'    => false,
+				'page'          => false,
+				'per_page'      => false,
+				'fields'        => 'all',
+			),
+			'bp_optout_get'
+		);
 
 		$sql = array(
 			'select'     => "SELECT",
@@ -561,25 +565,31 @@ class BP_Optout {
 		}
 
 		// WHERE.
-		$sql['where'] = self::get_where_sql( array(
-			'id'            => $r['id'],
-			'email_address' => $r['email_address'],
-			'user_id'       => $r['user_id'],
-			'email_type'    => $r['email_type'],
-			'search_terms'  => $r['search_terms'],
-		) );
+		$sql['where'] = self::get_where_sql(
+			array(
+				'id'            => $r['id'],
+				'email_address' => $r['email_address'],
+				'user_id'       => $r['user_id'],
+				'email_type'    => $r['email_type'],
+				'search_terms'  => $r['search_terms'],
+			)
+		);
 
 		// ORDER BY.
-		$sql['orderby'] = self::get_order_by_sql( array(
-			'order_by'   => $r['order_by'],
-			'sort_order' => $r['sort_order']
-		) );
+		$sql['orderby'] = self::get_order_by_sql(
+			array(
+				'order_by'   => $r['order_by'],
+				'sort_order' => $r['sort_order']
+			)
+		);
 
 		// LIMIT %d, %d.
-		$sql['pagination'] = self::get_paged_sql( array(
-			'page'     => $r['page'],
-			'per_page' => $r['per_page'],
-		) );
+		$sql['pagination'] = self::get_paged_sql(
+			array(
+				'page'     => $r['page'],
+				'per_page' => $r['per_page'],
+			)
+		);
 
 		$paged_optouts_sql = "{$sql['select']} {$sql['fields']} {$sql['from']} {$sql['where']} {$sql['orderby']} {$sql['pagination']}";
 
@@ -643,18 +653,22 @@ class BP_Optout {
 		$optouts_table_name = BP_Optout::get_table_name();
 
 		// Parse the arguments.
-		$r  = bp_parse_args( $args, array(
-			'id'                => false,
-			'email_address'     => false,
-			'user_id'           => false,
-			'email_type'        => false,
-			'search_terms'      => '',
-			'order_by'          => false,
-			'sort_order'        => false,
-			'page'              => false,
-			'per_page'          => false,
-			'fields'            => 'all',
-		), 'bp_optout_get_total_count' );
+		$r  = bp_parse_args(
+			$args,
+			array(
+				'id'            => false,
+				'email_address' => false,
+				'user_id'       => false,
+				'email_type'    => false,
+				'search_terms'  => '',
+				'order_by'      => false,
+				'sort_order'    => false,
+				'page'          => false,
+				'per_page'      => false,
+				'fields'        => 'all',
+			),
+			'bp_optout_get_total_count'
+		);
 
 		// Build the query
 		$select_sql = "SELECT COUNT(*)";
@@ -700,9 +714,9 @@ class BP_Optout {
 		$retval = self::_update( $update['data'], $where['data'], $update['format'], $where['format'] );
 
 		// Clear matching items from the cache.
-		$cache_args = $where_args;
+		$cache_args           = $where_args;
 		$cache_args['fields'] = 'ids';
-		$maybe_cached_ids = self::get( $cache_args );
+		$maybe_cached_ids     = self::get( $cache_args );
 		foreach ( $maybe_cached_ids as $invite_id ) {
 			wp_cache_delete( $invite_id, 'bp_optouts' );
 		}
@@ -747,9 +761,9 @@ class BP_Optout {
 		do_action( 'bp_optout_before_delete', $args );
 
 		// Clear matching items from the cache.
-		$cache_args = $args;
+		$cache_args           = $args;
 		$cache_args['fields'] = 'ids';
-		$maybe_cached_ids = self::get( $cache_args );
+		$maybe_cached_ids     = self::get( $cache_args );
 		foreach ( $maybe_cached_ids as $invite_id ) {
 			wp_cache_delete( $invite_id, 'bp_optouts' );
 		}
@@ -783,10 +797,11 @@ class BP_Optout {
 		$exists = false;
 
 		$args['fields'] = 'ids';
-		$optouts = BP_Optout::get( $args );
+		$optouts        = BP_Optout::get( $args );
 		if ( $optouts ) {
 			$exists = current( $optouts );
 		}
+
 		return $exists;
 	}
 
@@ -806,5 +821,4 @@ class BP_Optout {
 			'id' => $id,
 		) );
 	}
-
 }

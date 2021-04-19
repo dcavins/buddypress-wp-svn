@@ -55,40 +55,49 @@ function bp_core_optouts_admin_load() {
 		// The per_page screen option.
 		add_screen_option( 'per_page', array( 'label' => _x( 'Nonmember opt-outs', 'Nonmember opt-outs per page (screen options)', 'buddypress' ) ) );
 
-		get_current_screen()->add_help_tab( array(
-			'id'      => 'bp-optouts-overview',
-			'title'   => __( 'Overview', 'buddypress' ),
-			'content' =>
-			'<p>' . __( 'This is the administration screen for nonmember opt-outs on your site.', 'buddypress' ) . '</p>' .
-			'<p>' . __( 'From the screen options, you can customize the displayed columns and the pagination of this screen.', 'buddypress' ) . '</p>' .
-			'<p>' . __( 'You can reorder the list of opt-outs by clicking on the Email Address, User Who Contacted, Email Type or Date Modified column headers.', 'buddypress' ) . '</p>' .
-			'<p>' . __( 'Using the search form, you can search for an opt-out to a specific email address.', 'buddypress' ) . '</p>'
-		) );
+		// Current screen.
+		$current_screen = get_current_screen();
 
-		get_current_screen()->add_help_tab( array(
-			'id'      => 'bp-optouts-actions',
-			'title'   => __( 'Actions', 'buddypress' ),
-			'content' =>
-			'<p>' . __( 'Hovering over a row in the opt-outs list will display action links that allow you to manage the opt-out. You can perform the following actions:', 'buddypress' ) . '</p>' .
-			'<ul><li>' . __( '"Delete" allows you to delete the record of an opt-out. You will be asked to confirm this deletion.', 'buddypress' ) . '</li></ul>' .
-			'<p>' . __( 'Bulk actions allow you to perform these actions for the selected rows.', 'buddypress' ) . '</p>'
-		) );
+		$current_screen->add_help_tab(
+			array(
+				'id'      => 'bp-optouts-overview',
+				'title'   => __( 'Overview', 'buddypress' ),
+				'content' =>
+					'<p>' . __( 'This is the administration screen for nonmember opt-outs on your site.', 'buddypress' ) . '</p>' .
+					'<p>' . __( 'From the screen options, you can customize the displayed columns and the pagination of this screen.', 'buddypress' ) . '</p>' .
+					'<p>' . __( 'You can reorder the list of opt-outs by clicking on the Email Address, User Who Contacted, Email Type or Date Modified column headers.', 'buddypress' ) . '</p>' .
+					'<p>' . __( 'Using the search form, you can search for an opt-out to a specific email address.', 'buddypress' ) . '</p>',
+			)
+		);
+
+		$current_screen->add_help_tab(
+			array(
+				'id'      => 'bp-optouts-actions',
+				'title'   => __( 'Actions', 'buddypress' ),
+				'content' =>
+					'<p>' . __( 'Hovering over a row in the opt-outs list will display action links that allow you to manage the opt-out. You can perform the following actions:', 'buddypress' ) . '</p>' .
+					'<ul><li>' . __( '"Delete" allows you to delete the record of an opt-out. You will be asked to confirm this deletion.', 'buddypress' ) . '</li></ul>' .
+					'<p>' . __( 'Bulk actions allow you to perform these actions for the selected rows.', 'buddypress' ) . '</p>',
+			)
+		);
 
 		// Help panel - sidebar links.
-		get_current_screen()->set_help_sidebar(
+		$current_screen->set_help_sidebar(
 			'<p><strong>' . __( 'For more information:', 'buddypress' ) . '</strong></p>' .
 			'<p>' . __( '<a href="https://buddypress.org/support/">Support Forums</a>', 'buddypress' ) . '</p>'
 		);
 
 		// Add accessible hidden headings and text for the Pending Users screen.
-		get_current_screen()->set_screen_reader_content( array(
-			/* translators: accessibility text */
-			'heading_views'      => __( 'Filter opt-outs list', 'buddypress' ),
-			/* translators: accessibility text */
-			'heading_pagination' => __( 'Opt-out list navigation', 'buddypress' ),
-			/* translators: accessibility text */
-			'heading_list'       => __( 'Opt-outs list', 'buddypress' ),
-		) );
+		$current_screen->set_screen_reader_content(
+			array(
+				/* translators: accessibility text */
+				'heading_views'      => __( 'Filter opt-outs list', 'buddypress' ),
+				/* translators: accessibility text */
+				'heading_pagination' => __( 'Opt-out list navigation', 'buddypress' ),
+				/* translators: accessibility text */
+				'heading_list'       => __( 'Opt-outs list', 'buddypress' ),
+			)
+		);
 
 	} else {
 		if ( empty( $_REQUEST['optout_ids' ] ) ) {
@@ -233,7 +242,7 @@ function bp_core_optouts_admin() {
 
 		<?php endif; ?>
 
-			<p><?php echo $notice['message']; ?></p>
+			<p><?php echo esc_html( $notice['message'] ); ?></p>
 		</div>
 
 	<?php endif;
@@ -299,7 +308,8 @@ function bp_core_optouts_admin_index() {
 			'action2',
 			'_wpnonce',
 			'optout_ids'
-		), $_SERVER['REQUEST_URI']
+		),
+		$_SERVER['REQUEST_URI']
 	);
 
 	?>
@@ -309,10 +319,11 @@ function bp_core_optouts_admin_index() {
 
 		<?php
 		if ( $usersearch ) {
-			printf( '<span class="subtitle">' . __( 'Opt-outs with an email address matching &#8220;%s&#8221;', 'buddypress' ) . '</span>', esc_html( $usersearch ) );
+			$num_results = (int) $bp_optouts_list_table->total_items;
+			printf( '<span class="subtitle">' . esc_html( _n( 'Opt-out with an email address matching &#8220;%s&#8221;', 'Opt-outs with an email address matching &#8220;%s&#8221;', $num_results, 'buddypress' ) ) . '</span>', esc_html( $usersearch ) );
 		}
 		?>
-		<p class="description"><?php _e( 'This table shows opt-out requests from people who are not members of this site, but have been contacted via communication from this site, and wish to receive no further communications.', 'buddypress' ); ?></p>
+		<p class="description"><?php esc_html_e( 'This table shows opt-out requests from people who are not members of this site, but have been contacted via communication from this site, and wish to receive no further communications.', 'buddypress' ); ?></p>
 
 		<hr class="wp-header-end">
 
@@ -321,7 +332,7 @@ function bp_core_optouts_admin_index() {
 
 		<form id="bp-optouts-search-form" action="<?php echo esc_url( $search_form_url ) ;?>">
 			<input type="hidden" name="page" value="<?php echo esc_attr( $plugin_page ); ?>" />
-			<?php $bp_optouts_list_table->search_box( __( 'Search for a specific email address', 'buddypress' ), 'bp-optouts' ); ?>
+			<?php $bp_optouts_list_table->search_box( esc_html__( 'Search for a specific email address', 'buddypress' ), 'bp-optouts' ); ?>
 		</form>
 
 		<form id="bp-optouts-form" action="<?php echo esc_url( $form_url );?>" method="post">

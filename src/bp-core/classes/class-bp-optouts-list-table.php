@@ -33,12 +33,14 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 	 */
 	public function __construct() {
 		// Define singular and plural labels, as well as whether we support AJAX.
-		parent::__construct( array(
-			'ajax'     => false,
-			'plural'   => 'optouts',
-			'singular' => 'optout',
-			'screen'   => get_current_screen()->id,
-		) );
+		parent::__construct(
+			array(
+				'ajax'     => false,
+				'plural'   => 'optouts',
+				'singular' => 'optout',
+				'screen'   => get_current_screen()->id,
+			)
+		);
 	}
 
 	/**
@@ -57,11 +59,11 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 		$paged    = $this->get_pagenum();
 
 		$args = array(
-			'search_terms'      => $search,
-			'order_by'          => 'date_modified',
-			'sort_order'        => 'DESC',
-			'page'              => $paged,
-			'per_page'          => $per_page,
+			'search_terms' => $search,
+			'order_by'     => 'date_modified',
+			'sort_order'   => 'DESC',
+			'page'         => $paged,
+			'per_page'     => $per_page,
 		);
 
 		if ( isset( $_REQUEST['orderby'] ) ) {
@@ -76,10 +78,12 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 		$optouts_class     = new BP_Optout();
 		$this->total_items = $optouts_class->get_total_count( $args );
 
-		$this->set_pagination_args( array(
-			'total_items' => $this->total_items,
-			'per_page'    => $per_page,
-		) );
+		$this->set_pagination_args(
+			array(
+				'total_items' => $this->total_items,
+				'per_page'    => $per_page,
+			)
+		);
 	}
 
 	/**
@@ -102,10 +106,12 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 		);
 		?>
 
-		<h2 class="screen-reader-text"><?php
-			/* translators: accessibility text */
-			_e( 'Filter opt-outs list', 'buddypress' );
-		?></h2>
+		<h2 class="screen-reader-text">
+			<?php
+				/* translators: accessibility text */
+				esc_html_e( 'Filter opt-outs list', 'buddypress' );
+			?>
+		</h2>
 		<ul class="subsubsub">
 			<?php
 			/**
@@ -150,15 +156,18 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 		 *
 		 * @param array $value Array of columns to display.
 		 */
-		return apply_filters( 'bp_optouts_list_columns', array(
-			'cb'                       => '<input type="checkbox" />',
-			'email_address'            => __( 'Email Address Hash',    'buddypress' ),
-			'username'                 => __( 'Email Sender',        'buddypress' ),
-			'user_registered'          => __( 'Email Sender Registered',        'buddypress' ),
-			'email_type'               => __( 'Email Type', 'buddypress' ),
-			'email_type_description'   => __( 'Email Description', 'buddypress' ),
-			'optout_date_modified'     => __( 'Date Modified',   'buddypress' ),
-		) );
+		return apply_filters(
+			'bp_optouts_list_columns',
+			array(
+				'cb'                     => '<input type="checkbox" />',
+				'email_address'          => __( 'Email Address Hash', 'buddypress' ),
+				'username'               => __( 'Email Sender', 'buddypress' ),
+				'user_registered'        => __( 'Email Sender Registered', 'buddypress' ),
+				'email_type'             => __( 'Email Type', 'buddypress' ),
+				'email_type_description' => __( 'Email Description', 'buddypress' ),
+				'optout_date_modified'   => __( 'Date Modified', 'buddypress' ),
+			)
+		);
 	}
 
 	/**
@@ -192,10 +201,10 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 	 */
 	public function get_sortable_columns() {
 		return array(
-			'email_address'            => 'email_address_hash',
-			'username'                 => 'user_id',
-			'email_type'               => 'email_type',
-			'optout_date_modified'     => 'date_modified',
+			'email_address'        => 'email_address_hash',
+			'username'             => 'user_id',
+			'email_type'           => 'email_type',
+			'optout_date_modified' => 'date_modified',
 		);
 	}
 
@@ -226,7 +235,7 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 	 * @return void
 	 */
 	public function single_row( $optout = null, $style = '', $role = '', $numposts = 0 ) {
-		echo '<tr' . $style . ' id="optout-' . esc_attr( $optout->id ) . '">';
+		echo '<tr' . $style . ' id="optout-' . intval( $optout->id ) . '">';
 		echo $this->single_row_columns( $optout );
 		echo '</tr>';
 	}
@@ -240,10 +249,12 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 	 */
 	public function column_cb( $optout = null ) {
 	?>
-		<label class="screen-reader-text" for="optout_<?php echo intval( $optout->id ); ?>"><?php
-			/* translators: accessibility text */
-			printf( esc_html__( 'Select opt-out request: %s', 'buddypress' ), $optout->id );
-		?></label>
+		<label class="screen-reader-text" for="optout_<?php echo intval( $optout->id ); ?>">
+			<?php
+				/* translators: %d: accessibility text. */
+				printf( esc_html__( 'Select opt-out request: %d', 'buddypress' ), intval( $optout->id ) );
+			?>
+		</label>
 		<input type="checkbox" id="optout_<?php echo intval( $optout->id ) ?>" name="optout_ids[]" value="<?php echo esc_attr( $optout->id ) ?>" />
 		<?php
 	}
@@ -275,7 +286,7 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 			),
 			$form_url
 		);
-		$actions['delete'] = sprintf( '<a href="%1$s" class="delete">%2$s</a>', esc_url( $delete_link ), __( 'Delete', 'buddypress' ) );
+		$actions['delete'] = sprintf( '<a href="%1$s" class="delete">%2$s</a>', esc_url( $delete_link ), esc_html__( 'Delete', 'buddypress' ) );
 
 		/**
 		 * Filters the row actions for each opt-out in list.
@@ -304,7 +315,7 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 			return;
 		}
 		$user_link = bp_core_get_user_domain( $optout->user_id );
-		echo $avatar . sprintf( '<strong><a href="%1$s" class="edit">%2$s</a></strong><br/>', esc_url( $user_link ), $inviter->user_login );
+		echo $avatar . sprintf( '<strong><a href="%1$s" class="edit">%2$s</a></strong><br/>', esc_url( $user_link ), esc_html( $inviter->user_login ) );
 	}
 
 	/**
