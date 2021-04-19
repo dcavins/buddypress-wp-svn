@@ -651,6 +651,8 @@ function bp_update_to_8_0() {
 			}
 		}
 	}
+
+	bp_core_install_nonmember_opt_outs();
 }
 
 /**
@@ -685,8 +687,6 @@ function bp_migrate_new_member_activity_component() {
 			'%s'
 		)
 	);
-
-	bp_core_install_nonmember_opt_outs();
 }
 
 /**
