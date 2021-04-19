@@ -488,6 +488,7 @@ class BP_Members_Admin {
 				'bp-signups',
 				array( $this, 'signups_admin' )
 			);
+
 		}
 
 		$edit_page         = 'user-edit';
@@ -509,6 +510,8 @@ class BP_Members_Admin {
 			$this->user_page    .= '-network';
 			$this->users_page   .= '-network';
 			$this->signups_page .= '-network';
+
+			$this->members_optouts_page .= '-network';
 		}
 
 		// Setup the screen ID's.
@@ -2564,5 +2567,6 @@ class BP_Members_Admin {
 
 		return $value;
 	}
+
 }
 endif; // End class_exists check.

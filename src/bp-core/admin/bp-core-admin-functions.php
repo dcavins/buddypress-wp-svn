@@ -81,7 +81,7 @@ function bp_core_modify_admin_menu_highlight() {
 	}
 
 	// Network Admin > Tools.
-	if ( in_array( $plugin_page, array( 'bp-tools', 'available-tools' ) ) ) {
+	if ( in_array( $plugin_page, array( 'bp-tools', 'available-tools', 'bp-optouts' ) ) ) {
 		$submenu_file = $plugin_page;
 	}
 }
