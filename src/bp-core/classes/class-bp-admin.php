@@ -535,7 +535,11 @@ class BP_Admin {
 		remove_submenu_page( 'index.php', 'bp-credits' );
 
 		// Nonmembers Opt-outs page.
-		remove_submenu_page( 'tools.php', 'bp-optouts' );
+		if ( is_network_admin() ) {
+			remove_submenu_page( 'network-tools', 'bp-optouts' );
+		} else {
+			remove_submenu_page( 'tools.php', 'bp-optouts' );
+		}
 	}
 
 	/**

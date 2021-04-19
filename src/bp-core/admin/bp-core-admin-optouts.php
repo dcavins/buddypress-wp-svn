@@ -276,7 +276,7 @@ function bp_core_optouts_admin_index() {
 	$bp_optouts_list_table->prepare_items();
 
 	if ( is_network_admin() ) {
-		$form_url = network_admin_url( 'network-tools' );
+		$form_url = network_admin_url( 'admin.php' );
 	} else {
 		$form_url = bp_get_admin_url( 'tools.php' );
 	}
@@ -398,7 +398,7 @@ function bp_core_optouts_admin_manage( $action = '' ) {
 	);
 
 	if ( is_network_admin() ) {
-		$base_url = network_admin_url( 'network-tools' );
+		$base_url = network_admin_url( 'admin.php' );
 	} else {
 		$base_url = bp_get_admin_url( 'tools.php' );
 	}

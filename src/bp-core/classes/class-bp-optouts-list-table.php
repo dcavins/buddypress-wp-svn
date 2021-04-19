@@ -93,7 +93,7 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 	 */
 	public function views() {
 		if ( is_multisite() && bp_core_do_network_admin() ) {
-			$tools_parent = 'network-tools';
+			$tools_parent = 'admin.php';
 		} else {
 			$tools_parent = 'tools.php';
 		}
@@ -271,7 +271,7 @@ class BP_Optouts_List_Table extends WP_Users_List_Table {
 		$actions = array();
 
 		if ( is_network_admin() ) {
-			$form_url = network_admin_url( 'network-tools' );
+			$form_url = network_admin_url( 'admin.php' );
 		} else {
 			$form_url = bp_get_admin_url( 'tools.php' );
 		}
