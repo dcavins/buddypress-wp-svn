@@ -67,6 +67,21 @@ class BP_Optout {
 	 */
 	public $date_modified;
 
+	/**
+	 * Columns in the opt-out table.
+	 *
+	 * @since 8.0.0
+	 * @access public
+	 * @var array
+	 */
+	public static $columns = array(
+		'id',
+		'email_address_hash',
+		'user_id',
+		'email_type',
+		'date_modified'
+	);
+
 	/** Public Methods ****************************************************/
 
 	/**
@@ -365,9 +380,8 @@ class BP_Optout {
 		// Order by.
 		if ( ! empty( $args['order_by'] ) ) {
 			$order_by_clean = array();
-			$columns        = array( 'id', 'email_address_hash', 'user_id', 'email_type', 'date_modified' );
 			foreach ( (array) $args['order_by'] as $key => $value ) {
-				if ( in_array( $value, $columns, true ) ) {
+				if ( in_array( $value, self::$columns, true ) ) {
 					$order_by_clean[] = $value;
 				}
 			}

@@ -201,4 +201,38 @@
 		$this->set_current_user( $old_current_user );
 	}
 
+	public function test_bp_optouts_orderby_email_type() {
+		$old_current_user = get_current_user_id();
+
+		$u1 = $this->factory->user->create();
+		$this->set_current_user( $u1 );
+
+		// Create a few optouts.
+		$args = array(
+			'email_address'     => 'one@wp.org',
+			'user_id'           => $u1,
+			'email_type'        => 'A'
+		);
+		$i1 = bp_add_optout( $args );
+		$args['email_type']    = 'M';
+		$i2 = bp_add_optout( $args );
+		$args['email_type']    = 'E';
+		$i3 = bp_add_optout( $args );
+
+		$get_args = array(
+			'user_id'    => $u1,
+			'order_by'   => 'email_type',
+			'sort_order' => 'ASC',
+			'fields'     => 'ids',
+		);
+		$optouts = bp_get_optouts( $get_args );
+		$this->assertEqualSets( array( $i1, $i3, $i2 ), $optouts );
+
+		$get_args['sort_order'] = 'DESC';
+		$optouts                = bp_get_optouts( $get_args );
+		$this->assertEqualSets( array( $i2, $i3, $i1 ), $optouts );
+
+		$this->set_current_user( $old_current_user );
+	}
+
 }
