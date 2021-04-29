@@ -217,7 +217,7 @@ class BP_Members_Invitations_Template {
 
 		// Setup the invitations to loop through.
 		$invites_class = new BP_Members_Invitation_Manager();
-
+error_log( print_r( $this->query_vars, true ) );
 		$this->invitations              = $invites_class->get_invitations( $this->query_vars );
 		$this->current_invitation_count = count( $this->invitations );
 		$this->total_invitation_count   = $invites_class->get_invitations_total_count( $this->query_vars );
