@@ -148,11 +148,23 @@ class BP_Members_Component extends BP_Component {
 				require $this->path . 'bp-members/actions/invitations-bulk-manage.php';
 			}
 
-			// Screens.
-			if ( bp_is_user_members_invitations_list() ) {
-				require $this->path . 'bp-members/screens/list-invites.php';
+			/**
+			 * Screens.
+			 * Double-check current action, because the default screen
+			 * is sitation-specific.
+			 */
+			if ( empty( bp_current_action() ) ) {
+				if ( bp_is_my_profile() && bp_user_can( bp_displayed_user_id(), 'bp_members_invitations_view_send_screen' ) ) {
+					require $this->path . 'bp-members/screens/send-invites.php';
+				} else {
+					require $this->path . 'bp-members/screens/list-invites.php';
+				}
 			} else {
-				require $this->path . 'bp-members/screens/send-invites.php';
+				if ( bp_is_user_members_invitations_list() ) {
+					require $this->path . 'bp-members/screens/list-invites.php';
+				} else {
+					require $this->path . 'bp-members/screens/send-invites.php';
+				}
 			}
 		}
 	}
