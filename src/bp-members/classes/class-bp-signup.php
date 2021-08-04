@@ -111,7 +111,7 @@ class BP_Signup {
 
 		// Cache missed, so query the DB.
 		if ( false === $signup ) {
-			$signup = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$bp->members->table_name_signups} WHERE signup_id = %d AND active = 0", $this->id ) );
+			$signup = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$bp->members->table_name_signups} WHERE signup_id = %d", $this->id ) );
 
 			wp_cache_set( $this->id, $signup, 'bp_signups' );
 		}
@@ -187,7 +187,10 @@ class BP_Signup {
 	 *                                       `registered`, `activated`. Default `signup_id`.
 	 *     @type string      $order          Order direction. Default 'DESC'.
 	 *     @type bool        $include        Whether or not to include more specific query params.
-	 *     @type string      $activation_key Activation key to search for.
+	 *     @type string      $activation_key Activation key to search for. If specified, all other
+	 *                                       parameters will be ignored.
+	 *     @type int|bool    $active         Pass 0 for inactive signups, 1 for active signups,
+	 *                                       and `false` to ignore.
 	 *     @type string      $user_login     Specific user login to return.
 	 *     @type string      $fields         Which fields to return. Specify 'ids' to fetch a list of signups IDs.
 	 *                                       Default: 'all' (return BP_Signup objects).
@@ -210,6 +213,7 @@ class BP_Signup {
 				'order'          => 'DESC',
 				'include'        => false,
 				'activation_key' => '',
+				'active'         => 0,
 				'user_email'     => '',
 				'user_login'     => '',
 				'fields'         => 'all',
@@ -231,24 +235,37 @@ class BP_Signup {
 		$sql = array(
 			'select'     => "SELECT DISTINCT signup_id",
 			'from'       => "{$bp->members->table_name_signups}",
-			'where'      => array(
-				'active = 0',
-			),
+			'where'      => array(),
 			'orderby'    => '',
 			'limit'      => '',
 		);
 
-		if ( empty( $r['include'] ) ) {
+		// Activation key trumps other parameters because it should be unique.
+		if ( ! empty( $r['activation_key'] ) ) {
+
+			$sql['where'][] = $wpdb->prepare( "activation_key = %s", $r['activation_key'] );
+
+			// `Include` finds signups by ID.
+		} else if ( ! empty( $r['include'] ) ) {
+
+			$in             = implode( ',', wp_parse_id_list( $r['include'] ) );
+			$sql['where'][] = "signup_id IN ({$in})";
+
+			/**
+			 * Finally, the general case where a variety of parameters
+			 * can be used in combination to find signups.
+			 */
+		} else {
+
+			// Active.
+			if ( false !== $r['active'] ) {
+				$sql['where'][] = $wpdb->prepare( "active = %d", absint( $r['active'] ) );
+			}
 
 			// Search terms.
 			if ( ! empty( $r['usersearch'] ) ) {
 				$search_terms_like = '%' . bp_esc_like( $r['usersearch'] ) . '%';
 				$sql['where'][]    = $wpdb->prepare( "( user_login LIKE %s OR user_email LIKE %s OR meta LIKE %s )", $search_terms_like, $search_terms_like, $search_terms_like );
-			}
-
-			// Activation key.
-			if ( ! empty( $r['activation_key'] ) ) {
-				$sql['where'][] = $wpdb->prepare( "activation_key = %s", $r['activation_key'] );
 			}
 
 			// User email.
@@ -268,9 +285,6 @@ class BP_Signup {
 			if ( -1 !== $number ) {
 				$sql['limit'] = $wpdb->prepare( "LIMIT %d, %d", absint( $r['offset'] ), $number );
 			}
-		} else {
-			$in             = implode( ',', wp_parse_id_list( $r['include'] ) );
-			$sql['where'][] = "signup_id IN ({$in})";
 		}
 
 		// Implode WHERE clauses.
