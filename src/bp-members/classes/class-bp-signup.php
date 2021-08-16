@@ -78,6 +78,70 @@ class BP_Signup {
 	 */
 	public $activation_key;
 
+	/**
+	 * The activated date for the user.
+	 *
+	 * @since 10.0.0
+	 * @var string
+	 */
+	public $activated;
+
+	/**
+	 * Whether the user account is activated or not.
+	 *
+	 * @since 10.0.0
+	 * @var bool
+	 */
+	public $active;
+
+	/**
+	 * The date that the last activation email was sent.
+	 *
+	 * @since 10.0.0
+	 * @var string
+	 */
+	public $date_sent;
+
+	/**
+	 * Was the last activation email sent in the last 24 hours?
+	 *
+	 * @since 10.0.0
+	 * @var bool
+	 */
+	public $recently_sent;
+
+	/**
+	 * The number of activation emails sent to this user.
+	 *
+	 * @since 10.0.0
+	 * @var int
+	 */
+	public $count_sent;
+
+	/**
+	 * The domain for the signup.
+	 *
+	 * @since 10.0.0
+	 * @var string
+	 */
+	public $domain;
+
+	/**
+	 * The path for the signup.
+	 *
+	 * @since 10.0.0
+	 * @var string
+	 */
+	public $path;
+
+	/**
+	 * The title for the signup.
+	 *
+	 * @since 10.0.0
+	 * @var string
+	 */
+	public $title;
+
 
 	/** Public Methods *******************************************************/
 
@@ -133,7 +197,7 @@ class BP_Signup {
 		$this->user_email     = $signup->user_email;
 		$this->registered     = $signup->registered;
 		$this->activated      = $signup->activated;
-		$this->active         = $signup->active;
+		$this->active         = (bool) $signup->active;
 		$this->activation_key = $signup->activation_key;
 		$this->meta           = maybe_unserialize( $signup->meta );
 

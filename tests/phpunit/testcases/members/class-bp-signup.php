@@ -534,26 +534,7 @@ class BP_Tests_BP_Signup extends BP_UnitTestCase {
 	/**
 	 * @group cache
 	 */
-	public function test_objects_should_be_cached() {
-		$s1 = self::factory()->signup->create( array(
-			'user_login'     => 'accountone',
-			'user_email'     => 'accountone@example.com',
-			'activation_key' => 'activationkeyone',
-		) );
-
-		$found1 = new BP_Signup( $s1 );
-		$this->assertEquals( $s1, $found1->id );
-
-		$activate = BP_Signup::activate( (array) $s1 );
-
-		$found2 = new BP_Signup( $s1 );
-		$this->assertEquals( 0, $found2->id );
-	}
-
-	/**
-	 * @group cache
-	 */
-	public function object_caches_should_be_busted_by_activation() {
+	public function signup_objects_should_be_cached() {
 		global $wpdb;
 
 		$s1 = self::factory()->signup->create( array(
@@ -572,5 +553,27 @@ class BP_Tests_BP_Signup extends BP_UnitTestCase {
 		// @TODO: This fails because "get_avatar()" in populate() results in db queries.
 		$this->assertEquals( $found1, $found2 );
 		$this->assertEquals( $num_queries, $wpdb->num_queries );
+	}
+
+	/**
+	 * @group cache
+	 */
+	public function test_signup_object_caches_should_be_busted_by_activation() {
+		$s1 = self::factory()->signup->create( array(
+			'user_login'     => 'accountone',
+			'user_email'     => 'accountone@example.com',
+			'activation_key' => 'activationkeyone',
+		) );
+
+		$found1 = new BP_Signup( $s1 );
+		$this->assertEquals( $s1, $found1->id );
+		$this->assertFalse( $found1->active );
+
+		$activate = BP_Signup::activate( (array) $s1 );
+
+		$found2 = new BP_Signup( $s1 );
+		$this->assertEquals( $s1, $found2->id );
+		$this->assertTrue( $found2->active );
+
 	}
 }
