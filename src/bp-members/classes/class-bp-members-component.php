@@ -40,7 +40,7 @@ class BP_Members_Component extends BP_Component {
 			array(
 				'adminbar_myaccount_order' => 20,
 				'search_query_arg'         => 'members_search',
-				'features'                 => array( 'invitations' )
+				'features'                 => array( 'invitations', 'membership_requests' ),
 			)
 		);
 	}
@@ -72,6 +72,10 @@ class BP_Members_Component extends BP_Component {
 
 		if ( bp_is_active( 'activity' ) ) {
 			$includes[] = 'activity';
+		}
+
+		if ( bp_is_active( 'members', 'membership_requests' ) && (bool) bp_get_option( 'bp-enable-membership-requests' ) ) {
+			$includes[] = 'membership-requests';
 		}
 
 		// Include these only if in admin.

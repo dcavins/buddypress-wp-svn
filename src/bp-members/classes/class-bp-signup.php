@@ -214,6 +214,17 @@ class BP_Signup {
 			$this->date_sent = $signup->registered;
 		}
 
+		// How many times has the activation email been sent?
+		if ( isset( $this->meta['count_sent'] ) ) {
+			$this->count_sent = absint( $this->meta['count_sent'] );
+		} else {
+			/**
+			 * Meta will not be set if this is a pre-10.0 signup.
+			 * In this case, we assume that the count is 1.
+			 */
+			$this->count_sent = 1;
+		}
+
 		/**
 		 * Calculate a diff between now & last time
 		 * an activation link has been resent.
@@ -226,14 +237,8 @@ class BP_Signup {
 		 * Set a boolean to track whether an activation link
 		 * was sent in the last day.
 		 */
-		$this->recently_sent = ( $diff < 1 * DAY_IN_SECONDS );
+		$this->recently_sent = $this->count_sent && ( $diff < 1 * DAY_IN_SECONDS );
 
-		// How many times has the activation email been sent?
-		if ( isset( $this->meta['count_sent'] ) ) {
-			$this->count_sent = absint( $this->meta['count_sent'] );
-		} else {
-			$this->count_sent = 0;
-		}
 	}
 
 	/** Static Methods *******************************************************/

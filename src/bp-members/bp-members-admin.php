@@ -112,3 +112,67 @@ function bp_members_type_admin_updated_messages( $messages = array() ) {
 	return $messages;
 }
 add_filter( 'term_updated_messages', 'bp_members_type_admin_updated_messages' );
+
+/**
+ * Formats xprofile field data about a signup/membership request for display.
+ *
+ * Operates recursively on arrays, which are then imploded with commas.
+ *
+ * @since 10.0.0
+ *
+ * @param string|array $value Field value.
+ */
+function bp_members_admin_format_xprofile_field_for_display( $value ) {
+	if ( is_array( $value ) ) {
+		$value = array_map( 'bp_signup_format_xprofile_field_for_display', $value );
+		$value = implode( ', ', $value );
+	} else {
+		$value = stripslashes( $value );
+		$value = esc_html( $value );
+	}
+
+	return $value;
+}
+
+/**
+ * Outputs Informations about a signup/membership request into a modal inside the Signups Admin Screen.
+ *
+ * @since 10.0.0
+ *
+ * @param array $signup_field_labels The Signup field labels.
+ * @param object|null $signup_object The signup data object.
+ */
+function bp_members_admin_preview_signup_profile_info( $signup_field_labels = array(), $signup_object = null ) {
+	if ( ! isset( $signup_object->meta ) || ! $signup_field_labels ) {
+		return;
+	}
+
+	// Init ids.
+	$profile_field_ids = array();
+
+	// Get all xprofile field IDs except field 1.
+	if ( ! empty( $signup_object->meta['profile_field_ids'] ) ) {
+		$profile_field_ids = array_flip( explode( ',', $signup_object->meta['profile_field_ids'] ) );
+		unset( $profile_field_ids[1] );
+	}
+	?>
+	<div id="signup-info-modal-<?php echo $signup_object->id; ?>" style="display:none;">
+		<h1><?php printf( '%1$s (%2$s)', esc_html( $signup_object->user_name ), esc_html( $signup_object->user_email ) ); ?></h1>
+		<h2><?php esc_html_e( 'Extended Profile Information', 'buddypress' ); ?></h2>
+
+		<table class="signup-profile-data-drawer wp-list-table widefat fixed striped">
+			<?php if ( 1 <= count( $profile_field_ids ) ): foreach ( array_keys( $profile_field_ids ) as $profile_field_id ) :
+				$field_value = isset( $signup_object->meta[ "field_{$profile_field_id}" ] ) ? $signup_object->meta[ "field_{$profile_field_id}" ] : ''; ?>
+				<tr>
+					<td class="column-fields"><?php echo esc_html( $signup_field_labels[ $profile_field_id ] ); ?></td>
+					<td><?php echo bp_members_admin_format_xprofile_field_for_display( $field_value ); ?></td>
+				</tr>
+			<?php endforeach; else:  ?>
+				<tr>
+					<td><?php esc_html_e( 'There is no additional information to display.', 'buddypress' ); ?></td>
+				</tr>
+			<?php endif; ?>
+		</table>
+	</div>
+	<?php
+}

@@ -203,6 +203,27 @@ function bp_admin_setting_callback_members_invitations() {
 	do_action( 'bp_admin_settings_after_members_invitations' );
 }
 
+/**
+ * Allow new users to request membership to the network.
+ *
+ * @since 10.0.0
+ */
+function bp_admin_setting_callback_membership_requests() {
+?>
+	<input id="bp-enable-membership-requests" name="bp-enable-membership-requests" type="checkbox" value="1" <?php checked( bp_get_membership_requests_required( 'raw' ) ); ?> <?php if ( bp_get_signup_allowed() ) { echo 'disabled="disabled"'; } ?> />
+	<label for="bp-enable-membership-requests"><?php esc_html_e( 'Allow visitors to request site membership. If enabled, an administrator must approve each new site membership request.', 'buddypress' ); ?></label>
+	<?php if ( bp_get_signup_allowed() ) : ?>
+		<p class="description"><?php esc_html_e( 'Public registration is currently enabled. If you wish to require approval for new memberships, disable public registration and enable the membership requests feature.', 'buddypress' ); ?></p>
+	<?php endif; ?>
+	<?php
+	/**
+	 * Fires after the output of the membership requests settings section.
+	 *
+	 * @since 10.0.0
+	 */
+	do_action( 'bp_admin_settings_after_membership_requests' );
+}
+
 /** XProfile ******************************************************************/
 
 /**

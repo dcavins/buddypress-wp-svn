@@ -482,6 +482,12 @@ class BP_Admin {
 			register_setting( 'buddypress', 'bp-enable-members-invitations', 'intval' );
 		}
 
+		// Membership requests.
+		if ( bp_is_active( 'members', 'membership_requests' ) ) {
+			add_settings_field( 'bp-enable-membership-requests', __( 'Membership Requests', 'buddypress' ), 'bp_admin_setting_callback_membership_requests', 'buddypress', 'bp_members' );
+			register_setting( 'buddypress', 'bp-enable-membership-requests', 'intval' );
+		}
+
 		/* XProfile Section **************************************************/
 
 		if ( bp_is_active( 'xprofile' ) ) {
@@ -1282,10 +1288,17 @@ class BP_Admin {
 				'footer'       => true,
 			),
 
+			// 10.0
+			'bp-thickbox' => array(
+				'file'         => "{$url}bp-thickbox{$min}.js",
+				'dependencies' => array( 'thickbox' ),
+				'footer'       => true,
+			),
+
 			// 3.0
 			'bp-hello-js' => array(
 				'file'         => "{$url}hello{$min}.js",
-				'dependencies' => array( 'thickbox', 'wp-api-request' ),
+				'dependencies' => array( 'bp-thickbox', 'wp-api-request' ),
 				'footer'       => true,
 			),
 		) );

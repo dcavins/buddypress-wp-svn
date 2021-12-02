@@ -2388,24 +2388,18 @@ function bp_core_signup_send_validation_email( $user_id, $user_email, $key, $sal
 	bp_send_email( 'core-user-registration', $to, $args );
 
 	// Record that the activation email has been sent.
-	$signups = BP_Signup::get(
-		array(
-			'activation_key' => $key,
-		)
-	);
+	$signup = bp_members_get_signup_by( 'activation_key', $key );
 
-	if ( ! empty( $signups['signups'] ) ) {
-		foreach ( $signups['signups'] as $signup ) {
-			$meta = array(
-				'sent_date'  => current_time( 'mysql', true ),
-				'count_sent' => $signup->count_sent + 1
-			);
+	if ( $signup ) {
+		$meta = array(
+			'sent_date'  => current_time( 'mysql', true ),
+			'count_sent' => $signup->count_sent + 1
+		);
 
-			BP_Signup::update( array(
-				'signup_id' => $signup->id,
-				'meta'      => $meta,
-			) );
-		}
+		BP_Signup::update( array(
+			'signup_id' => $signup->id,
+			'meta'      => $meta,
+		) );
 	}
 }
 
@@ -2450,25 +2444,47 @@ function bp_core_signup_disable_inactive( $user = null, $username = '', $passwor
 	}
 
 	// Unactivated user account found!
-	// Set up the feedback message.
-	$signup_id = $signup['signups'][0]->signup_id;
+	/*
+	 * Don't allow users to resend their own activation email
+	 * when membership requests are enabled.
+	 */
+	if ( bp_get_membership_requests_required() ) {
+		$error_message = sprintf(
+			'<strong>%1$s</strong> %2$s',
+			esc_html_x( 'Error:', 'Warning used into the WP Login screen', 'buddypress' ),
+			esc_html_x( 'Your membership request has not yet been approved.', 'Error message used into the WP Login screen', 'buddypress' )
+		);
+	} else {
+		// Set up the feedback message.
+		$signup_id = $signup['signups'][0]->signup_id;
 
-	$resend_url_params = array(
-		'action' => 'bp-resend-activation',
-		'id'     => $signup_id,
-	);
+		$resend_url_params = array(
+			'action' => 'bp-resend-activation',
+			'id'     => $signup_id,
+		);
 
-	$resend_url = wp_nonce_url(
-		add_query_arg( $resend_url_params, wp_login_url() ),
-		'bp-resend-activation'
-	);
+		$resend_url = wp_nonce_url(
+			add_query_arg( $resend_url_params, wp_login_url() ),
+			'bp-resend-activation'
+		);
 
-	$resend_string = '<br /><br />';
+		$error_message = sprintf(
+			'<strong>%1$s</strong> %2$s<br /><br />%3$s',
+			esc_html_x( 'Error:', 'Warning used into the WP Login screen', 'buddypress' ),
+			esc_html_x( 'Your account has not been activated. Check your email for the activation link.', 'Error message used into the WP Login screen', 'buddypress' ),
+			sprintf(
+				/* translators: %s: the link to resend the activation email. */
+				esc_html_x( 'If you have not received an email yet, %s.', 'WP Login screen message', 'buddypress' ),
+				sprintf(
+					'<a href="%1$s">%2$s</a>',
+					esc_url( $resend_url ),
+					esc_html_x( 'click here to resend it', 'Text of the link to resend the activation email', 'buddypress' )
+				)
+			)
+		);
+	}
 
-	/* translators: %s: the activation url */
-	$resend_string .= sprintf( __( 'If you have not received an email yet, <a href="%s">click here to resend it</a>.', 'buddypress' ), esc_url( $resend_url ) );
-
-	return new WP_Error( 'bp_account_not_activated', __( '<strong>Error</strong>: Your account has not been activated. Check your email for the activation link.', 'buddypress' ) . $resend_string );
+	return new WP_Error( 'bp_account_not_activated', $error_message );
 }
 add_filter( 'authenticate', 'bp_core_signup_disable_inactive', 30, 3 );
 
@@ -3693,4 +3709,43 @@ function bp_get_members_invitation_from_request() {
 	 * @param BP_Invitation $invite Invitation specified by the $_GET parameters.
 	 */
 	return apply_filters( 'bp_get_members_invitation_from_request', $invite );
+}
+
+/**
+ * Get WP_User object corresponding to a record in the signups table.
+ *
+ * @since 10.0.0
+ *
+ * @param string $field Which fields to search by. Possible values are
+ *                      activation_key, user_email, id.
+ * @param string $value Value to search by.
+ * @return bool|BP_Signup $signup Found signup, returns first found
+ *                                if more than one is found.
+ */
+function bp_members_get_signup_by( $field = 'activation_key', $value = '' ) {
+	switch ( $field ) {
+		case 'activation_key':
+		case 'user_email':
+			$key = $field;
+			break;
+
+		case 'id':
+		default:
+			$key = 'include';
+			break;
+	}
+
+	$signups = BP_Signup::get(
+		array(
+			$key => $value,
+		)
+	);
+
+	if ( ! empty( $signups['signups'] ) ) {
+		$signup = current( $signups['signups'] );
+	} else {
+		$signup = false;
+	}
+
+	return $signup;
 }
