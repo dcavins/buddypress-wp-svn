@@ -2451,8 +2451,8 @@ function bp_core_signup_disable_inactive( $user = null, $username = '', $passwor
 	if ( bp_get_membership_requests_required() ) {
 		$error_message = sprintf(
 			'<strong>%1$s</strong> %2$s',
-			esc_html_x( 'Error:', 'Warning used into the WP Login screen', 'buddypress' ),
-			esc_html_x( 'Your membership request has not yet been approved.', 'Error message used into the WP Login screen', 'buddypress' )
+			esc_html_x( 'Error:', 'Warning displayed on the WP Login screen', 'buddypress' ),
+			esc_html_x( 'Your membership request has not yet been approved.', 'Error message displayed on the WP Login screen', 'buddypress' )
 		);
 	} else {
 		// Set up the feedback message.
@@ -2470,8 +2470,8 @@ function bp_core_signup_disable_inactive( $user = null, $username = '', $passwor
 
 		$error_message = sprintf(
 			'<strong>%1$s</strong> %2$s<br /><br />%3$s',
-			esc_html_x( 'Error:', 'Warning used into the WP Login screen', 'buddypress' ),
-			esc_html_x( 'Your account has not been activated. Check your email for the activation link.', 'Error message used into the WP Login screen', 'buddypress' ),
+			esc_html_x( 'Error:', 'Warning displayed on the WP Login screen', 'buddypress' ),
+			esc_html_x( 'Your account has not been activated. Check your email for the activation link.', 'Error message displayed on the WP Login screen', 'buddypress' ),
 			sprintf(
 				/* translators: %s: the link to resend the activation email. */
 				esc_html_x( 'If you have not received an email yet, %s.', 'WP Login screen message', 'buddypress' ),
