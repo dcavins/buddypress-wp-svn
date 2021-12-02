@@ -74,7 +74,16 @@ class BP_Members_Component extends BP_Component {
 			$includes[] = 'activity';
 		}
 
-		if ( bp_is_active( 'members', 'membership_requests' ) && (bool) bp_get_option( 'bp-enable-membership-requests' ) ) {
+		/**
+		 * Duplicate bp_get_membership_requests_required() and
+		 * bp_get_signup_allowed() logic here,
+		 * because those functions are not available yet.
+		 * The `bp_get_signup_allowed` filter is documented in
+		 * bp-members/bp-members-template.php.
+		 */
+		$signup_allowed = apply_filters( 'bp_get_signup_allowed', (bool) bp_get_option( 'users_can_register' ) );
+		$membership_requests_enabled = (bool) bp_get_option( 'bp-enable-membership-requests' );
+		if ( bp_is_active( 'members', 'membership_requests' ) && ! $signup_allowed && $membership_requests_enabled ) {
 			$includes[] = 'membership-requests';
 		}
 
