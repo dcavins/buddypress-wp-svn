@@ -221,3 +221,4 @@ function bp_members_invitations_maybe_bypass_request_approval( $send, $details )
 	return $send;
 }
 add_filter( 'bp_members_membership_requests_bypass_manual_approval', 'bp_members_invitations_maybe_bypass_request_approval', 10, 2 );
+add_filter( 'bp_members_membership_requests_bypass_manual_approval_multisite', 'bp_members_invitations_maybe_bypass_request_approval', 10, 2 );

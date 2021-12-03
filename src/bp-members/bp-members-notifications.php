@@ -205,7 +205,9 @@ add_action( 'bp_screens', 'bp_members_mark_read_accepted_invitation_notification
  * @since 10.0.0
  */
 function bp_members_mark_read_submitted_membership_request_notification() {
-	if ( ! wp_doing_ajax() && 'users_page_bp-signups' === get_current_screen()->base && ! empty( $_GET['mod_req'] ) && ! empty( $_GET['signup_id'] ) ) {
+
+	$signup_screens = array( 'users_page_bp-signups', 'users_page_bp-signups-network' );
+	if ( ! wp_doing_ajax() && in_array( get_current_screen()->base, $signup_screens, true ) && ! empty( $_GET['mod_req'] ) && ! empty( $_GET['signup_id'] ) ) {
 		// Mark all notifications about this request as read.
 		BP_Notifications_Notification::update(
 			array(

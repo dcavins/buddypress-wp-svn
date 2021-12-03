@@ -473,21 +473,31 @@ function bp_core_activation_signup_blog_notification( $domain, $path, $title, $u
 		),
 	);
 
-	$signups = BP_Signup::get(
-		array(
-			'user_login' => $user,
-		)
-	);
-
+	$signup     = bp_members_get_signup_by( 'activation_key', $key );
 	$salutation = $user;
-	if ( $signups && bp_is_active( 'xprofile' ) ) {
-		$signup = $signups['signups'][0];
+	if ( $signup && bp_is_active( 'xprofile' ) ) {
 		if ( isset( $signup->meta[ 'field_' . bp_xprofile_fullname_field_id() ] ) ) {
 			$salutation = $signup->meta[ 'field_' . bp_xprofile_fullname_field_id() ];
 		}
 	}
 
-	bp_send_email( 'core-user-registration-with-blog', array( array( $user_email => $salutation ) ), $args );
+	/**
+	 * Filters if BuddyPress should send an activation key for a new multisite signup.
+	 *
+	 * @since 10.0.0
+	 *
+	 * @param string $user       The user's login name.
+	 * @param string $user_email The user's email address.
+	 * @param string $key        The activation key created in wpmu_signup_blog().
+	 * @param string $domain     The new blog domain.
+	 * @param string $path       The new blog path.
+	 * @param string $title      The site title.
+	 */
+	if ( apply_filters( 'bp_core_signup_send_activation_key_multisite_blog', true, $user, $user_email, $key, $domain, $path, $title ) ) {
+
+		bp_send_email( 'core-user-registration-with-blog', array( array( $user_email => $salutation ) ), $args );
+
+	}
 
 	// Return false to stop the original WPMU function from continuing.
 	return false;
@@ -556,7 +566,22 @@ function bp_core_activation_signup_user_notification( $user, $user_email, $key, 
 			'user.id'      => $user_id,
 		),
 	);
-	bp_send_email( 'core-user-registration', array( array( $user_email => $salutation ) ), $args );
+
+	/**
+	 * Filters if BuddyPress should send an activation key for a new multisite signup.
+	 *
+	 * @since 10.0.0
+	 *
+	 * @param string $user       The user's login name.
+	 * @param string $user_email The user's email address.
+	 * @param string $key        The activation key created in wpmu_signup_blog().
+	 */
+	if ( apply_filters( 'bp_core_signup_send_activation_key_multisite', true, $user, $user_email, $key ) ) {
+
+		bp_send_email( 'core-user-registration', array( array( $user_email => $salutation ) ), $args );
+
+	}
+
 
 	// Return false to stop the original WPMU function from continuing.
 	return false;

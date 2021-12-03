@@ -11,7 +11,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * When a user creates a membership request,
+ * Single site: When a user creates a membership request,
  * prevent the sending of the activation email so that
  * the site admins can send it manually.
  *
@@ -69,6 +69,62 @@ function bp_members_membership_requests_cancel_activation_email( $send, $user_id
 }
 add_filter( 'bp_core_signup_send_activation_key', 'bp_members_membership_requests_cancel_activation_email', 10, 5 );
 
+/**
+ * WP Multisite: When a user creates a membership request,
+ * prevent the sending of the activation email so that
+ * the site admins can send it manually.
+ *
+ * @since 10.0.0
+ *
+ * @param bool   $send           Whether or not to send the activation key.
+ * @param string $user_login     User login name.
+ * @param string $user_email     User email address.
+ * @param string $activation_key Activation key created in wpmu_signup_user().
+ * @return bool Whether or not to send the activation key.
+ */
+function bp_members_membership_requests_cancel_activation_email_multisite( $send = true, $user_login = '', $user_email = '', $activation_key = '' ) {
+
+	$details = array(
+		'user_login'     => $user_login,
+		'user_email'     => $user_email,
+		'activation_key' => $activation_key,
+	);
+
+	/**
+	 * Allow some membership requests to be approved immediately.
+	 * For example, you might want to approve all requests
+	 * coming from users with certain email address domains.
+	 * If `true` is returned the activation email will be sent to the user.
+	 *
+	 * @since 10.0.0
+	 *
+	 * @param bool  $send    Whether or not this membership request should be approved
+	 *                       immediately and the activation email sent.
+	 *                       Default is `false` meaning that the request should be
+	 *                       manually approved by a site admin.
+	 * @param array $details The details of the request.
+	 */
+	$send = apply_filters( 'bp_members_membership_requests_bypass_manual_approval_multisite', false, $details );
+
+	// If the registration process has been interrupted, this is a new membership request.
+	if ( ! $send ) {
+		$signup = bp_members_get_signup_by( 'activation_key', $activation_key );
+
+		/**
+		 * Fires when a site membership request has been created and is pending.
+		 *
+		 * @since 10.0.0
+		 *
+		 * @param BP_Signup $signup  The signup object that has been created.
+		 * @param array     $details The details of the request.
+		 */
+		do_action( 'bp_members_membership_request_submitted', $signup, $details );
+	}
+
+	return $send;
+}
+add_filter( 'bp_core_signup_send_activation_key_multisite', 'bp_members_membership_requests_cancel_activation_email_multisite', 10, 4 );
+add_filter( 'bp_core_signup_send_activation_key_multisite_blog', 'bp_members_membership_requests_cancel_activation_email_multisite', 10, 4 );
 
 /**
  * Notifications
@@ -82,6 +138,10 @@ add_filter( 'bp_core_signup_send_activation_key', 'bp_members_membership_request
  * @param BP_Signup $signup  The signup object that has been created.
  */
 function bp_members_membership_requests_notify_site_admins( $signup ) {
+
+	if ( ! isset( $signup->signup_id ) ) {
+		return;
+	}
 
 	// Notify all site admins so the request can be handled.
 	$admin_ids = get_users(
