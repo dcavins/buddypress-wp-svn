@@ -76,19 +76,28 @@ add_filter( 'bp_core_signup_send_activation_key', 'bp_members_membership_request
  *
  * @since 10.0.0
  *
- * @param bool   $send           Whether or not to send the activation key.
- * @param string $user_login     User login name.
- * @param string $user_email     User email address.
- * @param string $activation_key Activation key created in wpmu_signup_user().
+ * @param bool   $send             Whether or not to send the activation key.
+ * @param string $user_login       User login name.
+ * @param string $user_email       User email address.
+ * @param string $activation_key   Activation key created in wpmu_signup_user().
+ * @param bool   $is_signup_resend Is the site admin sending this email?
  * @return bool Whether or not to send the activation key.
  */
-function bp_members_membership_requests_cancel_activation_email_multisite( $send = true, $user_login = '', $user_email = '', $activation_key = '' ) {
+function bp_members_membership_requests_cancel_activation_email_multisite( $send = true, $user_login = '', $user_email = '', $activation_key = '', $is_signup_resend = false ) {
 
 	$details = array(
-		'user_login'     => $user_login,
-		'user_email'     => $user_email,
-		'activation_key' => $activation_key,
+		'user_login'       => $user_login,
+		'user_email'       => $user_email,
+		'activation_key'   => $activation_key,
+		'is_signup_resend' => $is_signup_resend,
 	);
+
+	// Allow the site admin to send/resend approval emails.
+	if ( $is_signup_resend ) {
+		$to_send = true;
+	} else {
+		$to_send = false;
+	}
 
 	/**
 	 * Allow some membership requests to be approved immediately.
@@ -98,13 +107,13 @@ function bp_members_membership_requests_cancel_activation_email_multisite( $send
 	 *
 	 * @since 10.0.0
 	 *
-	 * @param bool  $send    Whether or not this membership request should be approved
+	 * @param bool  $to_send Whether or not this membership request should be approved
 	 *                       immediately and the activation email sent.
 	 *                       Default is `false` meaning that the request should be
 	 *                       manually approved by a site admin.
 	 * @param array $details The details of the request.
 	 */
-	$send = apply_filters( 'bp_members_membership_requests_bypass_manual_approval_multisite', false, $details );
+	$send = apply_filters( 'bp_members_membership_requests_bypass_manual_approval_multisite', $to_send, $details );
 
 	// If the registration process has been interrupted, this is a new membership request.
 	if ( ! $send ) {
@@ -123,8 +132,8 @@ function bp_members_membership_requests_cancel_activation_email_multisite( $send
 
 	return $send;
 }
-add_filter( 'bp_core_signup_send_activation_key_multisite', 'bp_members_membership_requests_cancel_activation_email_multisite', 10, 4 );
-add_filter( 'bp_core_signup_send_activation_key_multisite_blog', 'bp_members_membership_requests_cancel_activation_email_multisite', 10, 4 );
+add_filter( 'bp_core_signup_send_activation_key_multisite', 'bp_members_membership_requests_cancel_activation_email_multisite', 10, 5 );
+add_filter( 'bp_core_signup_send_activation_key_multisite_blog', 'bp_members_membership_requests_cancel_activation_email_multisite', 10, 5 );
 
 /**
  * Notifications
