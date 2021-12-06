@@ -819,14 +819,18 @@ class BP_Signup {
 
 		foreach ( $signups as $signup ) {
 
-			$meta = array(
-				'sent_date'  => current_time( 'mysql', true ),
-				'count_sent' => $signup->count_sent + 1
-			);
+			$meta               = $signup->meta;
+			$meta['sent_date']  = current_time( 'mysql', true );
+			$meta['count_sent'] = $signup->count_sent + 1;
 
 			// Send activation email.
 			if ( is_multisite() ) {
-				wpmu_signup_user_notification( $signup->user_login, $signup->user_email, $signup->activation_key, serialize( $meta ) );
+				// Should we send the user or blog activation email?
+				if ( ! empty( $signup->domain ) || ! empty( $signup->path ) ) {
+					wpmu_signup_blog_notification( $signup->domain, $signup->path, $signup->title, $signup->user_login, $signup->user_email, $signup->activation_key, $meta );
+				} else {
+					wpmu_signup_user_notification( $signup->user_login, $signup->user_email, $signup->activation_key, $meta );
+				}
 			} else {
 
 				// Check user status before sending email.
