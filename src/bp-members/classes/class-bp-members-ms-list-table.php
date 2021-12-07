@@ -125,7 +125,7 @@ class BP_Members_MS_List_Table extends WP_MS_Users_List_Table {
 		$this->screen->id = $reset_screen_id;
 
 		// Use thickbox to display the extended profile information.
-		if ( bp_is_active( 'xprofile' ) ) {
+		if ( bp_is_active( 'xprofile' ) || bp_members_site_requests_enabled() ) {
 			add_thickbox();
 		}
 	}
@@ -353,24 +353,26 @@ class BP_Members_MS_List_Table extends WP_MS_Users_List_Table {
 		echo esc_html( $signup_object->user_name );
 
 		// Insert the extended profile modal content required by thickbox.
-		if ( ! bp_is_active( 'xprofile' ) ) {
+		if ( ! bp_is_active( 'xprofile' ) && ! bp_members_site_requests_enabled() ) {
 			return;
 		}
 
-		$profile_field_ids = array();
+		if ( bp_is_active( 'xprofile' ) ) {
+			$profile_field_ids = array();
 
-		// Fetch registration field data once only.
-		if ( ! $this->signup_field_labels ) {
-			$field_groups = bp_xprofile_get_groups(
-				array(
-					'fetch_fields'       => true,
-					'signup_fields_only' => true,
-				)
-			);
+			// Fetch registration field data once only.
+			if ( ! $this->signup_field_labels ) {
+				$field_groups = bp_xprofile_get_groups(
+					array(
+						'fetch_fields'       => true,
+						'signup_fields_only' => true,
+					)
+				);
 
-			foreach( $field_groups as $field_group ) {
-				foreach( $field_group->fields as $field ) {
-					$this->signup_field_labels[ $field->id ] = $field->name;
+				foreach( $field_groups as $field_group ) {
+					foreach( $field_group->fields as $field ) {
+						$this->signup_field_labels[ $field->id ] = $field->name;
+					}
 				}
 			}
 		}

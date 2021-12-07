@@ -3749,3 +3749,17 @@ function bp_members_get_signup_by( $field = 'activation_key', $value = '' ) {
 
 	return $signup;
 }
+
+/**
+ * Are site creation requests currently enabled?
+ *
+ * @since 10.0.0
+ *
+ * @return bool Whether site requests are currently enabled.
+ */
+function bp_members_site_requests_enabled() {
+
+	$matches = array( 'blog', 'all' );
+
+	return is_multisite() && in_array( bp_core_get_root_option( 'registration' ), $matches, true );
+}

@@ -1757,7 +1757,7 @@ class BP_Members_Admin {
 			) );
 
 			// Use thickbox to display the extended profile information.
-			if ( bp_is_active( 'xprofile' ) ) {
+			if ( bp_is_active( 'xprofile' ) || bp_members_site_requests_enabled() ) {
 				wp_enqueue_style( 'thickbox' );
 				wp_enqueue_script(
 					'bp-signup-preview',

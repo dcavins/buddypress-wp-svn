@@ -304,7 +304,7 @@ function bp_members_membership_requests_filter_signup_row_actions( $actions, $si
 	$actions['resend'] = sprintf( '<a href="%1$s">%2$s</a>', esc_url( $email_link ), esc_html( $resend_label ) );
 
 	// Add a link to view profile info when membership requests and xprofile are active.
-	if ( bp_is_active( 'xprofile' ) ) {
+	if ( bp_is_active( 'xprofile' ) || bp_members_site_requests_enabled() ) {
 		$profile_link = add_query_arg(
 			array(
 				'page'	   => 'bp-signups#TB_inline',
