@@ -421,4 +421,70 @@ class BP_Tests_Groups_User_Can_Filter extends BP_UnitTestCase {
 		// Assert false since public groups shouldn't be able to request membership.
 		$this->assertFalse( bp_user_can( $u1, 'groups_request_membership', array( 'group_id' => $g1 ) ) );
 	}
+
+	public function test_user_can_leave_group() {
+		$g1 = $this->factory->group->create( array(
+			'status'      => 'public'
+		) );
+		$u1 = $this->factory->user->create();
+		$m1 = new BP_Groups_Member( $u1, $g1 );
+		$m1->promote( 'admin' );
+		$u2 = $this->factory->user->create();
+		$m2 = new BP_Groups_Member( $u2, $g1 );
+		$m2->promote( 'admin' );
+
+		$this->assertTrue( bp_user_can( $u1, 'groups_leave_group', array( 'group_id' => $g1 ) ) );
+	}
+
+	public function test_user_cannot_leave_group_if_only_admin() {
+		$g1 = $this->factory->group->create( array(
+			'status'      => 'public'
+		) );
+		$u1 = $this->factory->user->create();
+		$m1 = new BP_Groups_Member( $u1, $g1 );
+		$m1->promote( 'admin' );
+
+		$this->assertFalse( bp_user_can( $u1, 'groups_leave_group', array( 'group_id' => $g1 ) ) );
+	}
+
+	public function test_user_cannot_leave_group_if_only_admin_with_members() {
+		$g1 = $this->factory->group->create( array(
+			'status'      => 'public'
+		) );
+		$u1 = $this->factory->user->create();
+		$m1 = new BP_Groups_Member( $u1, $g1 );
+		$m1->promote( 'admin' );
+		$u2 = $this->factory->user->create();
+		$m2 = new BP_Groups_Member( $u2, $g1 );
+
+		$this->assertFalse( bp_user_can( $u1, 'groups_leave_group', array( 'group_id' => $g1 ) ) );
+	}
+
+	public function test_user_can_leave_group_if_member_when_only_one_admin() {
+		$g1 = $this->factory->group->create( array(
+			'status'      => 'public'
+		) );
+		$u1 = $this->factory->user->create();
+		$m1 = new BP_Groups_Member( $u1, $g1 );
+		$m1->promote( 'admin' );
+		$u2 = $this->factory->user->create();
+		$m2 = new BP_Groups_Member( $u2, $g1 );
+
+		$this->assertTrue( bp_user_can( $u2, 'groups_leave_group', array( 'group_id' => $g1 ) ) );
+	}
+
+	public function test_user_cannot_leave_group_if_only_admin_even_superadmin() {
+		$g1 = $this->factory->group->create( array(
+			'status'      => 'public'
+		) );
+		$u1 = $this->factory->user->create();
+		$m1 = new BP_Groups_Member( $u1, $g1 );
+		$m1->promote( 'admin' );
+
+		// Grant super admin status.
+		grant_super_admin( $u1 );
+
+		$this->assertFalse( bp_user_can( $u1, 'groups_leave_group', array( 'group_id' => $g1 ) ) );
+	}
+
 }

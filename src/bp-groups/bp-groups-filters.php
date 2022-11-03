@@ -211,6 +211,28 @@ function bp_groups_user_can_filter( $retval, $user_id, $capability, $site_id, $a
 	}
 
 	switch ( $capability ) {
+		case 'groups_leave_group':
+			// Return early if the user isn't logged in or the group ID is unknown.
+			if ( ! $user_id || ! $group_id ) {
+				break;
+			}
+
+			// Set to false to begin with.
+			$retval = false;
+
+			// The user must currently be a member.
+			if ( groups_is_user_member( $user_id, $group_id ) ) {
+				// And must not be the only group admin.
+				$group_admins = groups_get_group_admins( $group_id );
+				if ( ( 1 === count( $group_admins ) ) && ( $user_id === (int) $group_admins[0]->user_id ) ) {
+					// This user is the only admin. They may not leave the group.
+				} else {
+					// There are either multiple admins or this user isn't the sole admin.
+					$retval = true;
+				}
+			}
+			break;
+
 		case 'groups_join_group':
 			// Return early if the user isn't logged in or the group ID is unknown.
 			if ( ! $user_id || ! $group_id ) {
