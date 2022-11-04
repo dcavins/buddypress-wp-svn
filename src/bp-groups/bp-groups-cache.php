@@ -378,6 +378,53 @@ function bp_groups_reset_cache_incrementor_on_group_term_remove( $object_id, $te
 }
 add_action( 'bp_remove_object_terms', 'bp_groups_reset_cache_incrementor_on_group_term_remove', 10, 3 );
 
+/**
+ * When a user is already a member of a group, then becomes active (logs in for the first time),
+ * the group member count needs to be updated because they were not counted previously.
+ *
+ * @since 11.0.0
+ *
+ * @param int $user_id ID of the user whose activity is recorded.
+ */
+function enqueue_update_group_member_totals_for_newly_active_user( $user_id ) {
+	// The hook is called before the activity is recorded, so we need to defer the group count updates.
+	add_action( 'shutdown', 'update_group_member_totals_for_newly_active_user' );
+
+	// Store the user ID as a transient, else we won't know which user was updated.
+	set_transient( 'bp_first_activity_for_member_' . wp_get_session_token(), $user_id, 30 );
+}
+	/**
+	 * At shutdown, we refresh the group counts for the newly active member.
+	 *
+	 * @since 11.0.0
+	 */
+	function update_group_member_totals_for_newly_active_user() {
+		$transient_id = 'bp_first_activity_for_member_' . wp_get_session_token();
+
+		// Get the user ID from the transient.
+		$user_id = get_transient( $transient_id );
+
+		if ( false === $user_id ) {
+			return;
+		} else {
+			$user_id = (int) $user_id;
+		}
+
+		// Check for group memberships
+		$memberships = bp_get_user_groups( $user_id );
+
+		// Update the group member count for groups that will be affected.
+		if ( $memberships ) {
+			foreach ( $memberships as $group_id => $group_membership ) {
+				groups_get_total_member_count( $group_id, true );
+			}
+		}
+
+		// Remove the transient.
+		delete_transient( $transient_id );
+	}
+add_action( 'bp_first_activity_for_member', 'enqueue_update_group_member_totals_for_newly_active_user' );
+
 /* List actions to clear super cached pages on, if super cache is installed */
 add_action( 'groups_join_group',                 'bp_core_clear_cache' );
 add_action( 'groups_leave_group',                'bp_core_clear_cache' );
