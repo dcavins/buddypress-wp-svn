@@ -1268,22 +1268,79 @@ class BP_Component {
 		$queried_object = $query->get_queried_object();
 
 		if ( $queried_object instanceof WP_Post && 'buddypress' === get_post_type( $queried_object ) ) {
-			// Only include the queried directory post into returned posts.
-			$retval = array( $queried_object );
+			$component = bp_core_get_component_from_directory_page_id( $queried_object->ID );
+			if ( $component && bp_current_user_can( 'bp_read', array( 'bp_component' => $component ) ) ) {
+				// Only include the queried directory post into returned posts.
+				$retval = array( $queried_object );
 
-			// Reset some query flags.
-			$query->is_home       = false;
-			$query->is_front_page = false;
-			$query->is_page       = false;
-			$query->is_archive    = false;
-			$query->is_tax        = false;
+				// Reset some query flags.
+				$query->is_home       = false;
+				$query->is_front_page = false;
+				$query->is_page       = false;
+				$query->is_archive    = false;
+				$query->is_tax        = false;
 
-			if ( ! is_embed() ) {
-				$query->is_single = true;
+				if ( ! is_embed() ) {
+					$query->is_single = true;
+				}
+			} else {
+				// The current user may not access the directory page.
+				$bp                    = buddypress();
+				$bp->current_component = 'core';
+
+				// Unset other BuddyPress URI globals.
+				foreach ( array( 'current_item', 'current_action', 'action_variables', 'displayed_user' ) as $global ) {
+					if ( 'action_variables' === $global ) {
+						$bp->{$global} = array();
+					} elseif ( 'displayed_user' === $global ) {
+						$bp->{$global} = new \stdClass();
+					} else {
+						$bp->{$global} = '';
+					}
+				}
+
+				// Reset the post.
+				$post = (object) array(
+					'ID'             => 0,
+					'post_type'      => 'buddypress',
+					'post_name'      => 'restricted',
+					'post_title'     => __( 'Members-only area', 'bp-rewrites' ),
+					'post_content'   => bp_buffer_template_part( 'assets/utils/restricted-access-message', null, false ),
+					'comment_status' => 'closed',
+					'comment_count'  => 0,
+				);
+
+				// Reset the queried object.
+				$query->queried_object    = get_post( $post );
+				$query->queried_object_id = $query->queried_object->ID;
+
+				// Reset the posts.
+				$retval = array( $query->queried_object );
+
+				// Reset some WP Query properties.
+				$query->found_posts   = 1;
+				$query->max_num_pages = 1;
+				$query->posts         = $posts;
+				$query->post          = $post;
+				$query->post_count    = 1;
+				$query->is_home       = false;
+				$query->is_front_page = false;
+				$query->is_page       = false;
+				$query->is_single     = true;
+				$query->is_archive    = false;
+				$query->is_tax        = false;
+
+				// Make sure no comments are displayed for this page.
+				add_filter( 'comments_pre_query', 'bp_comments_pre_query', 10, 2 );
+
+				// @TODO: From bp-rewrites, meant to improve the button coloration.
+				// if ( function_exists( 'wp_get_global_styles' ) ) {
+				// 	add_action( 'bp_enqueue_community_scripts', __NAMESPACE__ . '\add_bp_login_block_inline_style' );
+				// }
 			}
-		}
 
-		return $retval;
+			return $retval;
+		}
 	}
 
 	/**

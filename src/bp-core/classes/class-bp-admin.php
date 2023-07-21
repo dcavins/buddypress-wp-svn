@@ -562,6 +562,12 @@ class BP_Admin {
 				register_setting( 'buddypress', '_bp_enable_akismet', 'intval' );
 			}
 		}
+
+		/* Community Visibility ************************************************/
+		add_settings_section( 'bp_community_visibility', __( 'Community Visibility', 'buddypress' ), 'bp_admin_setting_callback_community_visibility_section', 'buddypress' );
+
+		add_settings_field( '_bp_community_visibility', __( 'Visibility by Component', 'buddypress' ), 'bp_admin_setting_callback_community_visibility', 'buddypress', 'bp_community_visibility' );
+		register_setting( 'buddypress', '_bp_community_visibility', 'bp_community_visibility_sanitize_setting' );
 	}
 
 	/**
