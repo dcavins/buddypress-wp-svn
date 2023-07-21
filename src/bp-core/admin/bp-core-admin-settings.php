@@ -48,6 +48,39 @@ function bp_admin_setting_callback_account_deletion() {
 }
 
 /**
+ * Enable private site functionality.
+ *
+ * @since 12.0.0
+ *
+ */
+function bp_admin_setting_callback_community_visibility() {
+	$visibility      = bp_community_visibility_get_visibility();
+	$directory_pages = bp_core_get_directory_pages();
+?>
+	<fieldset class="community-visibility-setting">
+		<legend><?php esc_html_e( 'Global (Fallback) Setting', 'buddypress' ); ?></legend>
+		<label for="_bp_community_visibility-global-anyone"><input type="radio" id="_bp_community_visibility-global-anyone" name="_bp_community_visibility[global]" value="anyone" <?php checked( $visibility['global'], 'anyone' ); ?>/> <?php esc_html_e( 'Anyone', 'buddypress' ); ?></label>
+		<label for="_bp_community_visibility-global-members"><input type="radio" id="_bp_community_visibility-global-members" name="_bp_community_visibility[global]" value="members" <?php checked( $visibility['global'], 'members' ); ?>/> <?php esc_html_e( 'Members Only', 'buddypress' ); ?></label>
+	</fieldset>
+
+	<?php foreach ( $directory_pages as $component_id => $component_page ) : 
+		// Register and Activate must not be private.
+		if ( in_array( $component_id, array( 'register', 'activate' ) ) ) {
+			continue;
+		}
+		?>
+		<fieldset class="community-visibility-setting">
+			<legend><?php esc_html_e( $component_page->title, 'buddypress' ); ?></legend>
+			<label for="_bp_community_visibility-<?php echo esc_attr( $component_id ); ?>-anyone"><input type="radio" id="_bp_community_visibility-<?php echo esc_attr( $component_id ); ?>-anyone" name="_bp_community_visibility[<?php echo esc_attr( $component_id ); ?>]" value="anyone" <?php checked( $visibility[ $component_id ], 'anyone' ); ?>/> <?php esc_html_e( 'Anyone', 'buddypress' ); ?></label>
+			<label for="_bp_community_visibility-<?php echo esc_attr( $component_id ); ?>-members"><input type="radio" id="_bp_community_visibility-<?php echo esc_attr( $component_id ); ?>-members" name="_bp_community_visibility[<?php echo esc_attr( $component_id ); ?>]" value="members" <?php checked( $visibility[ $component_id ], 'members' ); ?>/> <?php esc_html_e( 'Members Only', 'buddypress' ); ?></label>
+		</fieldset>
+	<?php endforeach; ?>
+
+	<p id="_bp_community_visibility_description" class="description"><?php esc_html_e( 'Choose "Anyone" to allow any visitor access to your community area. Choose "Members" to restrict access to your community area to logged-in members only. The global setting is used when a more specific setting is not available.', 'buddypress' ); ?></p>
+<?php
+}
+
+/**
  * Form element to change the active template pack.
  */
 function bp_admin_setting_callback_theme_package_id() {
@@ -305,6 +338,16 @@ function bp_admin_setting_callback_group_cover_image_uploads() {
 	<label for="bp-disable-group-cover-image-uploads"><?php _e( 'Allow customizable cover images for groups', 'buddypress' ); ?></label>
 <?php
 }
+
+/** Community Visibility ******************************************************/
+
+/**
+ * Groups settings section description for the settings page.
+ *
+ * @since 12.0.0
+ */
+function bp_admin_setting_callback_community_visibility_section() { }
+
 
 /** Settings Page *************************************************************/
 
