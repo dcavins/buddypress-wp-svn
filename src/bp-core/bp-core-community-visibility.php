@@ -126,19 +126,19 @@ function bp_community_visibility_rss_feed_access_protection( $feed_enabled, $fee
 add_filter( 'bp_activity_enable_feeds', 'bp_community_visibility_rss_feed_access_protection', 10, 2 );
 
 /**
- * Get the community visibility value calculated from the 
+ * Get the community visibility value calculated from the
  * saved visibility setting.
  *
  * @since 12.0.0
  *
- * @param string $component Whether we want the visibility for a component 
+ * @param string $component Whether we want the visibility for a component
  *                          or for all components.
- * 
+ *
  * @return arrary|string $retval The calculated visbility settings for the site.
  */
 function bp_community_visibility_get_visibility( $component = 'all' ) {
 	$retval      = 'anyone';
-	$saved_value = get_option( '_bp_community_visibility' );
+	$saved_value = (array) get_option( '_bp_community_visibility', array() );
 
 	// If the global value has not been set, we assume that the site is open.
 	if ( ! isset( $saved_value['global'] ) ) {
@@ -147,8 +147,8 @@ function bp_community_visibility_get_visibility( $component = 'all' ) {
 
 	if ( 'all' === $component ) {
 		// Build the component list.
-		$retval = array( 
-			'global' => $saved_value['global'] 
+		$retval = array(
+			'global' => $saved_value['global']
 		);
 		$directory_pages = bp_core_get_directory_pages();
 		foreach ( $directory_pages as $component_id => $component_page ) {
@@ -164,7 +164,7 @@ function bp_community_visibility_get_visibility( $component = 'all' ) {
 	}
 
 	/**
-	 * Filter the community visibility value calculated from the 
+	 * Filter the community visibility value calculated from the
 	 * saved visibility setting.
 	 *
 	 * @since 12.0.0
@@ -177,9 +177,9 @@ function bp_community_visibility_get_visibility( $component = 'all' ) {
 
 /**
  * Sanitize the visibility setting when it is saved.
- * 
+ *
  * @since 12.0.0
- * 
+ *
  * @param mixed $saved_value The value passed to the save function.
  */
 function bp_community_visibility_sanitize_setting( $saved_value ) {

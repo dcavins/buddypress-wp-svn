@@ -991,7 +991,7 @@ function bp_core_set_unique_directory_page_slug( $slug = '', $post_ID = 0, $post
 		$pages = get_posts(
 			array(
 				'post__not_in' => array( $post_ID ),
-				'post_status'  => array( 'publish', 'bp_restricted' ),
+				'post_status'  => bp_core_get_directory_pages_stati(),
 				'post_type'    => array( 'buddypress', 'page' ),
 			)
 		);

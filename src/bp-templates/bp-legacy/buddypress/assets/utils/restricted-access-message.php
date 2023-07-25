@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <!-- wp:paragraph {"align":"center"} -->
-<p class="has-text-align-center"><?php esc_html_e( 'This community area is accessible to logged-in members only.', 'bp-rewrites' ); ?></p>
+<p class="has-text-align-center"><?php esc_html_e( 'This community area is accessible to logged-in members only.', 'buddypress' ); ?></p>
 <!-- /wp:paragraph -->
 
 <!-- wp:columns -->

@@ -1257,12 +1257,12 @@ class BP_Component {
 	 *
 	 * @since 12.0.0
 	 *
-	 * @param  null     $retval A null value to use the regular WP Query.
-	 * @param  WP_Query $query  The WP Query object.
+	 * @param  null     $posts A null value to use the regular WP Query.
+	 * @param  WP_Query $query The WP Query object.
 	 * @return null|array Null if not displaying a BuddyPress page.
-	 *                    An array containing the BuddyPress directory post otherwise.
+	 *                    An array containing the BuddyPress directory page otherwise.
 	 */
-	public function pre_query( $retval = null, $query = null ) {
+	public function pre_query( $posts = null, $query = null ) {
 		remove_filter( 'posts_pre_query', array( $this, 'pre_query' ), 10 );
 
 		$queried_object = $query->get_queried_object();
@@ -1271,7 +1271,7 @@ class BP_Component {
 			$component = bp_core_get_component_from_directory_page_id( $queried_object->ID );
 			if ( $component && bp_current_user_can( 'bp_read', array( 'bp_component' => $component ) ) ) {
 				// Only include the queried directory post into returned posts.
-				$retval = array( $queried_object );
+				$posts = array( $queried_object );
 
 				// Reset some query flags.
 				$query->is_home       = false;
@@ -1304,7 +1304,7 @@ class BP_Component {
 					'ID'             => 0,
 					'post_type'      => 'buddypress',
 					'post_name'      => 'restricted',
-					'post_title'     => __( 'Members-only area', 'bp-rewrites' ),
+					'post_title'     => __( 'Members-only area', 'buddypress' ),
 					'post_content'   => bp_buffer_template_part( 'assets/utils/restricted-access-message', null, false ),
 					'comment_status' => 'closed',
 					'comment_count'  => 0,
@@ -1315,7 +1315,7 @@ class BP_Component {
 				$query->queried_object_id = $query->queried_object->ID;
 
 				// Reset the posts.
-				$retval = array( $query->queried_object );
+				$posts = array( $query->queried_object );
 
 				// Reset some WP Query properties.
 				$query->found_posts   = 1;
@@ -1332,14 +1332,9 @@ class BP_Component {
 
 				// Make sure no comments are displayed for this page.
 				add_filter( 'comments_pre_query', 'bp_comments_pre_query', 10, 2 );
-
-				// @TODO: From bp-rewrites, meant to improve the button coloration.
-				// if ( function_exists( 'wp_get_global_styles' ) ) {
-				// 	add_action( 'bp_enqueue_community_scripts', __NAMESPACE__ . '\add_bp_login_block_inline_style' );
-				// }
 			}
 
-			return $retval;
+			return $posts;
 		}
 	}
 
