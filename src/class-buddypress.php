@@ -644,7 +644,6 @@ class BuddyPress {
 		require $this->plugin_dir . 'bp-core/bp-core-customizer-email.php';
 		require $this->plugin_dir . 'bp-core/bp-core-rest-api.php';
 		require $this->plugin_dir . 'bp-core/bp-core-blocks.php';
-		require $this->plugin_dir . 'bp-core/bp-core-community-visibility.php';
 
 		// Get the list of versions needing their deprecated functions to be loaded.
 		$deprecated_functions_versions = bp_get_deprecated_functions_versions();

@@ -141,6 +141,15 @@ function bp_map_meta_caps( $caps, $cap, $user_id, $args ) {
 	switch ( $cap ) {
 		case 'bp_view' :
 			$caps = array( 'exist' );
+			if ( ! $user_id ) {
+
+				// A BuddyPress component ID may be optionally passed with the `bp_view` check.
+				$component = isset( $args['bp_component'] ) ? $args['bp_component'] : '';
+
+				if ( 'members' === bp_get_community_visibility( $component ) ) {
+					$caps = array( 'do_not_allow' );
+				}
+			}
 			break;
 	}
 

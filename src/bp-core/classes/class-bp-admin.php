@@ -476,6 +476,10 @@ class BP_Admin {
 		add_settings_field( 'bp-disable-account-deletion', __( 'Account Deletion', 'buddypress' ), 'bp_admin_setting_callback_account_deletion', 'buddypress', 'bp_main' );
 		register_setting( 'buddypress', 'bp-disable-account-deletion', 'intval' );
 
+		// Community Visibility
+		add_settings_field( '_bp_community_visibility', __( 'Community Visibility', 'buddypress' ), 'bp_admin_setting_callback_community_visibility', 'buddypress', 'bp_main' );
+		register_setting( 'buddypress', '_bp_community_visibility', 'bp_admin_sanitize_callback_community_visibility' );
+
 		// Template pack picker.
 		add_settings_field( '_bp_theme_package_id', __( 'Template Pack', 'buddypress' ), 'bp_admin_setting_callback_theme_package_id', 'buddypress', 'bp_main', array( 'label_for' => '_bp_theme_package_id' ) );
 		register_setting( 'buddypress', '_bp_theme_package_id', 'sanitize_text_field' );
@@ -562,12 +566,6 @@ class BP_Admin {
 				register_setting( 'buddypress', '_bp_enable_akismet', 'intval' );
 			}
 		}
-
-		/* Community Visibility ************************************************/
-		add_settings_section( 'bp_community_visibility', __( 'Community Visibility', 'buddypress' ), 'bp_admin_setting_callback_community_visibility_section', 'buddypress' );
-
-		add_settings_field( '_bp_community_visibility', __( 'Visibility by Component', 'buddypress' ), 'bp_admin_setting_callback_community_visibility', 'buddypress', 'bp_community_visibility' );
-		register_setting( 'buddypress', '_bp_community_visibility', 'bp_community_visibility_sanitize_setting' );
 	}
 
 	/**

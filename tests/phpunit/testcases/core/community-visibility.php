@@ -14,11 +14,7 @@ class BP_Tests_BP_Community_Visibility_TestCases extends BP_UnitTestCase {
 
 		// Save a typical setting.
 		$setting = array(
-			'global'      => 'anyone',
-			'members'     => 'anyone',
-			'attachments' => 'anyone',
-			'activity'    => 'members',
-			'groups'      => 'members'
+			'global' => 'members',
 		);
 		update_option( '_bp_community_visibility', $setting );
 	}
@@ -30,21 +26,17 @@ class BP_Tests_BP_Community_Visibility_TestCases extends BP_UnitTestCase {
 
 	// Test that logged-in user has access to component marked anyone and component marked members
 	public function test_bp_community_visibility_allow_visibility_for_logged_in_user() {
-		$this->assertTrue( bp_user_can( $this->logged_in_user, 'bp_view', array( 'bp_component' => 'members' ) ) );
-		$this->assertTrue( bp_user_can( $this->logged_in_user, 'bp_view', array( 'bp_component' => 'groups' ) ) );
-	}
-
-	// Test that anonymous user has access to component marked anyone but not component marked members
-	public function test_bp_community_visibility_enforce_visibility_for_anon_user() {
-		$this->assertTrue( bp_user_can( 0, 'bp_view', array( 'bp_component' => 'members' ) ) );
-		$this->assertFalse( bp_user_can( 0, 'bp_view', array( 'bp_component' => 'groups' ) ) );
-	}
-
-	// No component or bad component should be open.
-	public function test_bp_community_visibility_bad_component_id() {
-		$this->assertTrue( bp_user_can( 0, 'bp_view' ) );
 		$this->assertTrue( bp_user_can( $this->logged_in_user, 'bp_view' ) );
-		$this->assertTrue( bp_user_can( 0, 'bp_view', array( 'bp_component' => 'blerg' ) ) );
+	}
+
+	// Test that anonymous user does not have access
+	public function test_bp_community_visibility_enforce_visibility_for_anon_user() {
+		$this->assertFalse( bp_user_can( 0, 'bp_view' ) );
+	}
+
+	// Bad component ID should use global setting.
+	public function test_bp_community_visibility_bad_component_id() {
+		$this->assertFalse( bp_user_can( 0, 'bp_view', array( 'bp_component' => 'blerg' ) ) );
 		$this->assertTrue( bp_user_can( $this->logged_in_user, 'bp_view', array( 'bp_component' => 'blerg' ) ) );
 	}
 
@@ -52,8 +44,18 @@ class BP_Tests_BP_Community_Visibility_TestCases extends BP_UnitTestCase {
 	public function test_bp_community_visibility_no_saved_setting() {
 		delete_option( '_bp_community_visibility' );
 		// No saved setting should result in the site being open to anyone.
-		$this->assertTrue( bp_user_can( 0, 'bp_view', array( 'bp_component' => 'groups' ) ) );
-		$this->assertTrue( bp_user_can( $this->logged_in_user, 'bp_view', array( 'bp_component' => 'groups' ) ) );
+		$this->assertTrue( bp_user_can( 0, 'bp_view' ) );
+		$this->assertTrue( bp_user_can( $this->logged_in_user, 'bp_view' ) );
+	}
+
+	// Ensure that "anyone" setting allows access to everyone.
+	public function test_bp_community_visibility_access_allowed() {
+		$setting = array(
+			'global'      => 'anyone',
+		);
+		update_option( '_bp_community_visibility', $setting );
+		$this->assertTrue( bp_user_can( 0, 'bp_view' ) );
+		$this->assertTrue( bp_user_can( $this->logged_in_user, 'bp_view' ) );
 	}
 
 	// Make sure fallback logic works for mixed-up setting values.
@@ -64,6 +66,6 @@ class BP_Tests_BP_Community_Visibility_TestCases extends BP_UnitTestCase {
 			'members'     => 'anyone',
 		);
 		update_option( '_bp_community_visibility', $setting );
-		$this->assertTrue( 'members' === bp_community_visibility_get_visibility( 'groups' ) );
+		$this->assertTrue( 'members' === bp_get_community_visibility( 'groups' ) );
 	}
 }

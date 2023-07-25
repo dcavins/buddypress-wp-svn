@@ -54,30 +54,52 @@ function bp_admin_setting_callback_account_deletion() {
  *
  */
 function bp_admin_setting_callback_community_visibility() {
-	$visibility      = bp_community_visibility_get_visibility();
-	$directory_pages = bp_core_get_directory_pages();
+	$visibility = bp_get_community_visibility( 'all' );
 ?>
-	<fieldset class="community-visibility-setting">
-		<legend><?php esc_html_e( 'Global (Fallback) Setting', 'buddypress' ); ?></legend>
-		<label for="_bp_community_visibility-global-anyone"><input type="radio" id="_bp_community_visibility-global-anyone" name="_bp_community_visibility[global]" value="anyone" <?php checked( $visibility['global'], 'anyone' ); ?>/> <?php esc_html_e( 'Anyone', 'buddypress' ); ?></label>
-		<label for="_bp_community_visibility-global-members"><input type="radio" id="_bp_community_visibility-global-members" name="_bp_community_visibility[global]" value="members" <?php checked( $visibility['global'], 'members' ); ?>/> <?php esc_html_e( 'Members Only', 'buddypress' ); ?></label>
-	</fieldset>
+	<select name="_bp_community_visibility[global]" id="_bp_community_visibility-global" aria-describedby="_bp_community_visibility_description" autocomplete="off">
+		<option value="anyone" <?php echo selected( $visibility['global'], 'anyone' ); ?>><?php esc_html_e( 'Anyone', 'buddypress' ); ?></option>
+		<option value="members" <?php echo selected( $visibility['global'], 'members' ); ?>><?php esc_html_e( 'Members Only', 'buddypress' ); ?></option>
+	</select>
 
-	<?php foreach ( $directory_pages as $component_id => $component_page ) : 
-		// Register and Activate must not be private.
-		if ( in_array( $component_id, array( 'register', 'activate' ) ) ) {
+	<p id="_bp_community_visibility_description" class="description"><?php esc_html_e( 'Choose "Anyone" to allow any visitor access to your community area. Choose "Members Only" to restrict access to your community area to logged-in members only.', 'buddypress' ); ?></p>
+<?php
+}
+
+/**
+ * Sanitize the visibility setting when it is saved.
+ *
+ * @since 12.0.0
+ *
+ * @param mixed $saved_value The value passed to the save function.
+ */
+function bp_admin_sanitize_callback_community_visibility( $saved_value ) {
+	$retval = array();
+
+	// Use the global setting, if it has been passed.
+	$retval['global'] = isset( $saved_value['global'] ) ? $saved_value['global'] : 'anyone';
+	// Ensure the global value is a valid option. Else, assume that the site is open.
+	if ( ! in_array( $retval['global'], array( 'anyone', 'members' ), true ) ) {
+		$retval['global'] = 'anyone';
+	}
+
+	// Keys must be either 'global' or a component ID, but not register or activate.
+	$directory_pages = bp_core_get_directory_pages();
+	foreach ( $directory_pages as $component_id => $component_page ) {
+		if ( in_array( $component_id, array( 'register', 'activate' ), true ) ) {
 			continue;
 		}
-		?>
-		<fieldset class="community-visibility-setting">
-			<legend><?php esc_html_e( $component_page->title, 'buddypress' ); ?></legend>
-			<label for="_bp_community_visibility-<?php echo esc_attr( $component_id ); ?>-anyone"><input type="radio" id="_bp_community_visibility-<?php echo esc_attr( $component_id ); ?>-anyone" name="_bp_community_visibility[<?php echo esc_attr( $component_id ); ?>]" value="anyone" <?php checked( $visibility[ $component_id ], 'anyone' ); ?>/> <?php esc_html_e( 'Anyone', 'buddypress' ); ?></label>
-			<label for="_bp_community_visibility-<?php echo esc_attr( $component_id ); ?>-members"><input type="radio" id="_bp_community_visibility-<?php echo esc_attr( $component_id ); ?>-members" name="_bp_community_visibility[<?php echo esc_attr( $component_id ); ?>]" value="members" <?php checked( $visibility[ $component_id ], 'members' ); ?>/> <?php esc_html_e( 'Members Only', 'buddypress' ); ?></label>
-		</fieldset>
-	<?php endforeach; ?>
 
-	<p id="_bp_community_visibility_description" class="description"><?php esc_html_e( 'Choose "Anyone" to allow any visitor access to your community area. Choose "Members" to restrict access to your community area to logged-in members only. The global setting is used when a more specific setting is not available.', 'buddypress' ); ?></p>
-<?php
+		// Use the global value if a specific value hasn't been set.
+		$component_value = isset( $saved_value[ $component_id ] ) ? $saved_value[ $component_id ] : $retval['global'];
+
+		// Valid values are 'anyone' or 'memebers'.
+		if ( ! in_array( $component_value, array( 'anyone', 'members' ), true ) ) {
+			$component_value = $retval['global'];
+		}
+		$retval[ $component_id ] = $component_value;
+	}
+
+	return $saved_value;
 }
 
 /**
@@ -338,16 +360,6 @@ function bp_admin_setting_callback_group_cover_image_uploads() {
 	<label for="bp-disable-group-cover-image-uploads"><?php _e( 'Allow customizable cover images for groups', 'buddypress' ); ?></label>
 <?php
 }
-
-/** Community Visibility ******************************************************/
-
-/**
- * Groups settings section description for the settings page.
- *
- * @since 12.0.0
- */
-function bp_admin_setting_callback_community_visibility_section() { }
-
 
 /** Settings Page *************************************************************/
 

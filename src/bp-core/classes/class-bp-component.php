@@ -1269,7 +1269,7 @@ class BP_Component {
 
 		if ( $queried_object instanceof WP_Post && 'buddypress' === get_post_type( $queried_object ) ) {
 			$component = bp_core_get_component_from_directory_page_id( $queried_object->ID );
-			if ( $component && bp_current_user_can( 'bp_view', array( 'bp_component' => $component ) ) ) {
+			if ( bp_current_user_can( 'bp_view', array( 'bp_component' => $component ) ) ) {
 				// Only include the queried directory post into returned posts.
 				$posts = array( $queried_object );
 
