@@ -28,7 +28,7 @@ function bp_community_visibility_user_can_filter( $retval, $user_id, $capability
 	switch ( $capability ) {
 		case 'bp_view':
 			if ( ! $user_id ) {
-				$component = $args['bp_component'] ?? '';
+				$component = isset( $args['bp_component'] ) ? $args['bp_component'] : '';
 
 				if ( $component && 'members' === bp_community_visibility_get_visibility( $component ) ) {
 					$retval = false;
@@ -155,12 +155,12 @@ function bp_community_visibility_get_visibility( $component = 'all' ) {
 			if ( in_array( $component_id, array( 'register', 'activate' ), true ) ) {
 				continue;
 			}
-			$retval[ $component_id ] = $saved_value[ $component_id ] ?? $saved_value['global'];
+			$retval[ $component_id ] = isset( $saved_value[ $component_id ] ) ? $saved_value[ $component_id ] : $saved_value['global'];
 		}
 	} else {
 		// We are checking a particular component.
 		// Fall back to the global value if not set.
-		$retval = $saved_value[ $component ] ?? $saved_value['global'];
+		$retval = isset( $saved_value[ $component ] ) ? $saved_value[ $component ] : $saved_value['global'];
 	}
 
 	/**
@@ -186,7 +186,7 @@ function bp_community_visibility_sanitize_setting( $saved_value ) {
 	$retval = array();
 
 	// Use the global setting, if it has been passed.
-	$retval['global'] = $saved_value['global'] ?? 'anyone';
+	$retval['global'] = isset( $saved_value['global'] ) ? $saved_value['global'] : 'anyone';
 	// Ensure the global value is a valid option. Else, assume that the site is open.
 	if ( ! in_array( $retval['global'], array( 'anyone', 'members' ), true ) ) {
 		$retval['global'] = 'anyone';
@@ -200,7 +200,7 @@ function bp_community_visibility_sanitize_setting( $saved_value ) {
 		}
 
 		// Use the global value if a specific value hasn't been set.
-		$component_value = $saved_value[ $component_id ] ?? $retval['global'];
+		$component_value = isset( $saved_value[ $component_id ] ) ? $saved_value[ $component_id ] : $retval['global'];
 
 		// Valid values are 'anyone' or 'memebers'.
 		if ( ! in_array( $component_value, array( 'anyone', 'members' ), true ) ) {
