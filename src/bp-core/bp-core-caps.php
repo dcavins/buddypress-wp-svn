@@ -124,7 +124,7 @@ function bp_remove_caps() {
  * Map community caps to built in WordPress caps.
  *
  * @since 1.6.0
- * @since 12.0.0 Added mapping for `bp_read` capability.
+ * @since 12.0.0 Added mapping for `bp_view` capability.
  *
  * @see WP_User::has_cap() for description of the arguments passed to the
  *      'map_meta_cap' filter.
@@ -139,7 +139,7 @@ function bp_remove_caps() {
 function bp_map_meta_caps( $caps, $cap, $user_id, $args ) {
 
 	switch ( $cap ) {
-		case 'bp_read' :
+		case 'bp_view' :
 			$caps = array( 'exist' );
 			break;
 	}

@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * The main change on a private site is that visitors who are not
- * logged in may not have the `bp_read` capability.
+ * logged in may not have the `bp_view` capability.
  *
  * @since 12.0.0
  *
@@ -26,7 +26,7 @@ defined( 'ABSPATH' ) || exit;
  */
 function bp_community_visibility_user_can_filter( $retval, $user_id, $capability, $site_id, $args ) {
 	switch ( $capability ) {
-		case 'bp_read':
+		case 'bp_view':
 			if ( ! $user_id ) {
 				$component = $args['bp_component'] ?? '';
 
@@ -95,7 +95,7 @@ function bp_community_visibility_rest_check_default_permission( $retval, $reques
 		$args['bp_component'] = $component_id;
 	}
 
-	return bp_current_user_can( 'bp_read', $args );
+	return bp_current_user_can( 'bp_view', $args );
 }
 
 /**
@@ -110,7 +110,7 @@ function bp_community_visibility_rss_feed_access_protection( $feed_enabled, $fee
 	// @TODO: I'm not sure this is adequate, since feeds are about other components, too.
 	// From the hook, "possible feed_ids are 'sitewide', 'personal', 'friends', 'mygroups', 'mentions', 'favorites'"
 	// Which component should those other items refer to?
-	if ( ! bp_current_user_can( 'bp_read', array( 'bp_component' => 'activity' ) ) ) {
+	if ( ! bp_current_user_can( 'bp_view', array( 'bp_component' => 'activity' ) ) ) {
 		/**
 		 * Allow plugins to allow specific feeds even when community visibility is limited.
 		 *
