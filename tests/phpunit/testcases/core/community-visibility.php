@@ -22,6 +22,8 @@ class BP_Tests_BP_Community_Visibility_TestCases extends BP_UnitTestCase {
 	public function tear_down() {
 		parent::tear_down();
 		$this->set_current_user( $this->old_user );
+		// Reset site to totally open.
+		delete_option( '_bp_community_visibility' );
 	}
 
 	// Test that logged-in user has access to component marked anyone and component marked members
