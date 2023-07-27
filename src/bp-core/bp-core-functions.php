@@ -4984,8 +4984,12 @@ function bp_get_component_navigations( $component = '' ) {
  * @return arrary|string $retval The calculated visbility settings for the site.
  */
 function bp_get_community_visibility( $component = 'global' ) {
-	$retval      = 'anyone';
-	$saved_value = (array) get_option( '_bp_community_visibility', array() );
+	$retval = ( 'all' === $component ) ? array( 'global' => 'anyone' ) : 'anyone';
+	if ( 'rewrites' !== bp_core_get_query_parser() ) {
+		return $retval;
+	}
+
+	$saved_value = (array) bp_get_option( '_bp_community_visibility', array() );
 
 	// If the global value has not been set, we assume that the site is open.
 	if ( ! isset( $saved_value['global'] ) ) {

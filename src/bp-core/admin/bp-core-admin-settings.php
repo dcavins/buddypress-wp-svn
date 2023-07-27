@@ -48,10 +48,9 @@ function bp_admin_setting_callback_account_deletion() {
 }
 
 /**
- * Enable private site functionality.
+ * Choose whether the community is visible to anyone or only to members.
  *
  * @since 12.0.0
- *
  */
 function bp_admin_setting_callback_community_visibility() {
 	$visibility = bp_get_community_visibility( 'all' );

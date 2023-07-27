@@ -477,8 +477,10 @@ class BP_Admin {
 		register_setting( 'buddypress', 'bp-disable-account-deletion', 'intval' );
 
 		// Community Visibility
-		add_settings_field( '_bp_community_visibility', __( 'Community Visibility', 'buddypress' ), 'bp_admin_setting_callback_community_visibility', 'buddypress', 'bp_main' );
-		register_setting( 'buddypress', '_bp_community_visibility', 'bp_admin_sanitize_callback_community_visibility' );
+		if ( 'rewrites' === bp_core_get_query_parser() ) {
+			add_settings_field( '_bp_community_visibility', __( 'Community Visibility', 'buddypress' ), 'bp_admin_setting_callback_community_visibility', 'buddypress', 'bp_main' );
+			register_setting( 'buddypress', '_bp_community_visibility', 'bp_admin_sanitize_callback_community_visibility' );
+		}
 
 		// Template pack picker.
 		add_settings_field( '_bp_theme_package_id', __( 'Template Pack', 'buddypress' ), 'bp_admin_setting_callback_theme_package_id', 'buddypress', 'bp_main', array( 'label_for' => '_bp_theme_package_id' ) );

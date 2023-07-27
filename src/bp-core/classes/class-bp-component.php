@@ -1325,8 +1325,7 @@ class BP_Component {
 				$query->post_count    = 1;
 				$query->is_home       = false;
 				$query->is_front_page = false;
-				$query->is_page       = false;
-				$query->is_single     = true;
+				$query->is_page       = true;
 				$query->is_archive    = false;
 				$query->is_tax        = false;
 

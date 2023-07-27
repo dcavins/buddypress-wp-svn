@@ -4492,26 +4492,7 @@ function bp_activity_personal_data_exporter( $email_address, $page ) {
  *                        'sitewide', 'personal', 'friends', 'mygroups', 'mentions', 'favorites'.
  */
 function bp_activity_is_feed_enable( $feed_id = '' ) {
-	if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'activity' ) ) ) {
-		// @TODO: Should we map the feeds to a component, like
-		// $component = 'activity';
-		// switch ( $feed_id ) {
-		// 	case 'mygroups':
-		// 		$component = 'groups';
-		// 		break;
-		// 	case 'personal':
-		// 	case 'friends':
-		// 	case 'mentions':
-		// 	case 'favorites':
-		// 	default:
-		// 		$component = 'members';
-		// 		break;
-		// }
-		// $retval = bp_current_user_can( 'bp_view', array( 'bp_component' => $component ) );
-		$retval = true;
-	} else {
-		$retval = false;
-	}
+	$retval = bp_current_user_can( 'bp_view', array( 'bp_component' => 'activity' ) );
 
 	/**
 	 * Filters if BuddyPress should consider feeds enabled. If disabled, it will return early.
