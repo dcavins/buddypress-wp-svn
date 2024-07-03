@@ -828,14 +828,14 @@ class BP_Admin {
 						</p>
 						<ol>
 							<li>
-								<?php esc_html_e( 'There’s a new "BuddyPress constants" panel into the WordPress Site Health information tool: have a look at it to check whether you’re using deprecated constants into your custom code or third party BP Plugins / Add-ons.', 'buddypress' ); ?>
-								<?php esc_html_e( 'BTW, information into the "BuddyPress" & "BuddyPress constants" panels is very useful when you need to ask for support.', 'buddypress' ); ?>
+								<?php esc_html_e( 'There’s a new "BuddyPress constants" panel added to the WordPress Site Health information tool. Use it to check whether you’re using deprecated constants in your custom code or third party BP Plugins/Add-ons.', 'buddypress' ); ?>
+								<?php esc_html_e( 'The information in the "BuddyPress" and "BuddyPress constants" panels is also very useful when you need to ask for support.', 'buddypress' ); ?>
 							</li>
 							<li>
 								<?php
 								printf(
 									/* Translators: %s is a the link to the new User Documentation on GitHub */
-									esc_html__( 'Most BuddyPress Admin screens now have an help tab in their top right corner which include a link to an updated %s.', 'buddypress' ),
+									esc_html__( 'Most BuddyPress Admin screens now have a help tab in their top right corner which includes a link to an updated %s.', 'buddypress' ),
 									sprintf(
 										'<a href="%1$s">%2$s</a>',
 										esc_url( 'https://github.com/buddypress/buddypress/tree/master/docs/user/administration#readme' ),
@@ -861,7 +861,7 @@ class BP_Admin {
 								<?php
 								printf(
 									/* translators: %s is the placeholder for the link to a developer note. */
-									esc_html__( 'Speaking of signups, the %s has been improved so that you can now send values for any xProfile fields registered into the Signups profile fields group.', 'buddypress' ),
+									esc_html__( 'Speaking of signups, the %s has been improved so that you can now submit values for any xProfile field registered as part of the Signups profile field group.', 'buddypress' ),
 									sprintf(
 										'<a href="%1$s">%2$s</a>',
 										esc_url( 'https://bpdevel.wordpress.com/2024/05/07/signup-fields-via-the-rest-api/' ),
@@ -874,7 +874,7 @@ class BP_Admin {
 							<?php
 								printf(
 									/* translators: %s is the placeholder for the link to a developer note. */
-									esc_html__( 'Last but not least: completely overriding all BuddyPress texts with your community vocabulary using %s is finally natively supported again.', 'buddypress' ),
+									esc_html__( 'Last but not least, we again offer native support for overriding BuddyPress’s language with your community vocabulary using %s.', 'buddypress' ),
 									sprintf(
 										'<a href="%1$s">%2$s</a>',
 										esc_url( 'https://bpdevel.wordpress.com/2024/06/28/translating-buddypress-texts-into-your-community-vocabulary-is-back-in-14-0-0/' ),
@@ -891,12 +891,12 @@ class BP_Admin {
 							<?php
 							printf(
 								/* Translators: %s is a black cat emoji. */
-								esc_html__( 'Compared to our previous major version (12.0.0 - the number right after was too intimidating %s), 14.0.0 is a quiet version.', 'buddypress' ),
+								esc_html__( 'Compared to our previous major version (12.0.0 - the number right after was too intimidating %s), 14.0.0 is a quieter update.', 'buddypress' ),
 								// phpcs:ignore WordPress.Security.EscapeOutput
 								wp_staticize_emoji( '🐈‍⬛' )
 							);
 							echo '&nbsp;';
-							esc_html_e( 'After the huge BP Rewrites API revolution, the humans (us the BP Team) who maintain & support your favorite community plugin needed to get over their emotions to get ready for the new round of big changes arriving in 15.0.0.', 'buddypress' );
+							esc_html_e( 'After the huge BP Rewrites API revolution, the humans (us the BP Team) who maintain and support your favorite community plugin needed to catch their breath to get ready for the new round of big changes arriving in 15.0.0.', 'buddypress' );
 							?>
 						</p>
 
@@ -910,11 +910,11 @@ class BP_Admin {
 
 						<p>
 							<?php
-							esc_html_e( 'Let’s keep in mind BuddyPress is an open source project maintained by volunteers giving freely their time & energy to help you build great WordPress community sites.', 'buddypress' );
+							esc_html_e( 'Let’s keep in mind BuddyPress is an open source project maintained by volunteers giving freely of their time and energy to help you build great WordPress community sites.', 'buddypress' );
 							echo '&nbsp;';
 							printf(
 									/* Translators: %s is a the link to the new Contributor Documentation on GitHub */
-									esc_html__( 'Don’t hesitate to send us some encouraging words & please consider contributing back to %s.', 'buddypress' ),
+									esc_html__( 'Don’t hesitate to send us some encouraging words and please consider contributing back to %s.', 'buddypress' ),
 									sprintf(
 										'<a href="%1$s">%2$s</a>',
 										esc_url( 'https://github.com/buddypress/buddypress/tree/master/docs/contributor#readme' ),
