@@ -257,6 +257,53 @@ class BP_Tests_Admin_Functions extends BP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * @ticket BP9329
+	 */
+	public function test_bp_email_get_type_schema_should_allow_custom_types() {
+		add_filter( 'bp_email_get_schema', array( $this, 'filter_bp_email_get_schema' ) );
+		add_filter( 'bp_email_get_type_schema', array( $this, 'filter_bp_email_get_type_schema' ) );
+
+		try {
+			$types = bp_email_get_type_schema( 'all' );
+			$this->assertArrayHasKey( 'test-email-type', $types );
+			$this->assertSame( 'Test email type description.', $types['test-email-type']['description'] );
+
+			$descriptions = bp_email_get_type_schema( 'description' );
+			$this->assertSame( 'Test email type description.', $descriptions['test-email-type'] );
+
+			require_once( BP_PLUGIN_DIR . '/bp-core/admin/bp-core-admin-schema.php' );
+			bp_core_install_emails();
+
+			$term = get_term_by( 'slug', 'test-email-type', bp_get_email_tax_type() );
+			$this->assertInstanceOf( 'WP_Term', $term );
+			$this->assertSame( 'Test email type description.', $term->description );
+		} finally {
+			remove_filter( 'bp_email_get_schema', array( $this, 'filter_bp_email_get_schema' ) );
+			remove_filter( 'bp_email_get_type_schema', array( $this, 'filter_bp_email_get_type_schema' ) );
+		}
+	}
+
+	public function filter_bp_email_get_schema( $emails ) {
+		$emails['test-email-type'] = array(
+			'post_title'   => 'Test email type',
+			'post_content' => 'Test email type content.',
+			'post_excerpt' => 'Test email type content.',
+		);
+
+		return $emails;
+	}
+
+	public function filter_bp_email_get_type_schema( $types ) {
+		$types['test-email-type'] = array(
+			'description'      => 'Test email type description.',
+			'named_salutation' => false,
+			'unsubscribe'      => false,
+		);
+
+		return $types;
+	}
+
 	public function is_active_filter( $is_active, $component ) {
 		if ( ! $is_active && 'attachments' === $component ) {
 			$is_active = true;
