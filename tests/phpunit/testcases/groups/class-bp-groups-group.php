@@ -23,6 +23,148 @@ class BP_Tests_BP_Groups_Group_TestCases extends BP_UnitTestCase {
 		$this->assertSame( 0, $group->id );
 	}
 
+
+	public function test_get_sql_clauses_filter_duplicate_join_and_cached_totals() {
+		$first  = self::factory()->group->create();
+		$second = self::factory()->group->create();
+
+		$args   = array( 'fields' => 'ids', 'per_page' => 2, 'page' => 1, 'include' => array( $first, $second ) );
+
+		$this->assertSame( 2, BP_Groups_Group::get( $args )['total'] );
+
+		$selected = $first;
+		$calls    = array();
+		$filter   = static function( $clauses, $parsed ) use ( &$selected, &$calls, &$filter ) {
+			remove_filter( 'bp_groups_group_get_sql_clauses', $filter, 0 );
+			$calls[] = $parsed;
+			$clauses['join'] .= " INNER JOIN (SELECT {$selected} AS allowed_id UNION ALL SELECT {$selected}) access ON access.allowed_id = g.id";
+			$clauses['where_conditions']['access'] = "access.allowed_id = {$selected}";
+
+			return $clauses;
+		};
+
+		add_filter( 'bp_groups_group_get_sql_clauses', $filter, 0, 2 );
+
+		try {
+			$found = BP_Groups_Group::get( $args );
+
+			$this->assertSame( array( $first ), $found['groups'] );
+			$this->assertSame( 1, $found['total'] );
+
+			$selected = $second;
+
+			add_filter( 'bp_groups_group_get_sql_clauses', $filter, 0, 2 );
+			$found = BP_Groups_Group::get( $args );
+
+			$this->assertSame( array( $second ), $found['groups'] );
+			$this->assertSame( 1, $found['total'] );
+			$this->assertCount( 2, $calls );
+			$this->assertSame( 'ids', $calls[0]['fields'] );
+		} finally {
+			remove_filter( 'bp_groups_group_get_sql_clauses', $filter, 0 );
+		}
+
+		$this->assertSame( 2, BP_Groups_Group::get( $args )['total'] );
+	}
+
+	public function test_get_sql_can_replace_both_queries() {
+		$contexts = array();
+		$filter   = static function( $sql, $type, $args, $clauses ) use ( &$contexts ) {
+			$contexts[ $type ] = array( $args, $clauses );
+
+			return 'count' === $type ? 'SELECT 42' : str_replace( 'WHERE', 'WHERE 1 = 0 AND', $sql );
+		};
+
+		add_filter( 'bp_groups_group_get_sql', $filter, 10, 4 );
+
+		try {
+			$found = BP_Groups_Group::get( array( 'fields' => 'ids', 'cache_results' => false ) );
+		} finally {
+			remove_filter( 'bp_groups_group_get_sql', $filter );
+		}
+
+		$this->assertSame( array(), $found['groups'] );
+		$this->assertSame( 42, $found['total'] );
+		$this->assertSame( array( 'paged', 'count' ), array_keys( $contexts ) );
+		$this->assertSame( $contexts['paged'], $contexts['count'] );
+		$this->assertArrayHasKey( 'where_conditions', $contexts['paged'][1] );
+	}
+
+	/**
+	 * @expectedDeprecated bp_groups_get_paged_groups_sql
+	 * @expectedDeprecated bp_groups_get_total_groups_sql
+	 */
+	public function test_get_legacy_sql_filters_keep_arguments_and_canonical_runs_last() {
+		self::factory()->group->create();
+
+		$args   = array( 'fields' => 'ids', 'cache_results' => false );
+
+		$calls  = array();
+		$legacy = static function( $sql, $parts, $parsed ) use ( &$calls ) {
+			$calls[] = array( $parts, $parsed );
+
+			return str_replace( 'WHERE', 'WHERE 1 = 0 AND', $sql ) . ' /* legacy */';
+		};
+
+		$canonical = function( $sql, $type ) {
+			$this->assertStringContainsString( '/* legacy */', $sql );
+
+			return 'count' === $type ? 'SELECT 42' : $sql;
+		};
+
+		add_filter( 'bp_groups_get_paged_groups_sql', $legacy, 10, 3 );
+		add_filter( 'bp_groups_get_total_groups_sql', $legacy, 10, 3 );
+
+		try {
+			$legacy_only = BP_Groups_Group::get( $args );
+
+			$this->assertSame( array(), $legacy_only['groups'] );
+			$this->assertSame( 0, $legacy_only['total'] );
+
+			add_filter( 'bp_groups_group_get_sql', $canonical, 10, 2 );
+			$found = BP_Groups_Group::get( $args );
+
+			$this->assertSame( array(), $found['groups'] );
+			$this->assertSame( 42, $found['total'] );
+			$this->assertCount( 4, $calls );
+			$this->assertSame( $calls[0], $calls[1] );
+			$this->assertSame( 'ids', $calls[0][1]['fields'] );
+		} finally {
+			remove_filter( 'bp_groups_group_get_sql', $canonical );
+			remove_filter( 'bp_groups_get_paged_groups_sql', $legacy );
+			remove_filter( 'bp_groups_get_total_groups_sql', $legacy );
+		}
+	}
+
+	public function test_get_default_sql_text_is_unchanged() {
+		$bp     = buddypress();
+		$first  = self::factory()->group->create();
+		$second = self::factory()->group->create();
+		$from = "FROM {$bp->groups->table_name} g WHERE g.status != 'hidden' AND g.id IN ({$first},{$second})";
+		$expected = array(
+			'paged' => "SELECT DISTINCT g.id {$from} ORDER BY g.date_created DESC LIMIT 0, 2",
+			'count' => "SELECT COUNT(DISTINCT g.id) {$from}",
+		);
+
+		$queries = array();
+		$capture = static function( $sql, $type ) use ( &$queries ) {
+			$queries[ $type ] = $sql;
+
+			return $sql;
+		};
+
+		add_filter( 'bp_groups_group_get_sql', $capture, 10, 2 );
+
+		try {
+			$found = BP_Groups_Group::get( array( 'fields' => 'ids', 'cache_results' => false, 'include' => array( $first, $second ), 'per_page' => 2, 'page' => 1 ) );
+		} finally {
+			remove_filter( 'bp_groups_group_get_sql', $capture );
+		}
+
+		$this->assertSame( $expected, $queries );
+		$this->assertSame( 2, $found['total'] );
+	}
+
 	/** get() ************************************************************/
 
 	/**
