@@ -593,6 +593,72 @@ class BP_Tests_BP_Groups_Group_TestCases extends BP_UnitTestCase {
 
 	/**
 	 * @group get
+	 * @dataProvider group_search_slash_cases
+	 */
+	public function test_get_search_matches_escaped_and_unescaped_text( $column, $text, $search ) {
+		global $wpdb;
+
+		$args       = array( $column => wp_slash( $text ) );
+		$escaped_id = self::factory()->group->create( $args );
+		$plain_id   = self::factory()->group->create( $args );
+
+		// Simulate an imported record stored without the default before-save slashes.
+		$this->assertSame(
+			1,
+			$wpdb->update(
+				buddypress()->groups->table_name,
+				array( $column => $text ),
+				array( 'id' => $plain_id ),
+				array( '%s' ),
+				array( '%d' )
+			)
+		);
+		wp_cache_delete( $plain_id, 'bp_groups' );
+
+		$other_text = str_replace( array( '%', '_' ), 'x', $text );
+		if ( $other_text === $text ) {
+			$other_text = 'Another nonmatching group';
+		}
+		self::factory()->group->create( array( $column => wp_slash( $other_text ) ) );
+
+		$query_args = array(
+			'search_terms'   => $search,
+			'search_columns' => array( $column ),
+		);
+		$expected   = array( $escaped_id, $plain_id );
+		sort( $expected );
+
+		// Repeat the query to exercise the cached result as well.
+		for ( $i = 0; $i < 2; $i++ ) {
+			$groups = BP_Groups_Group::get( $query_args );
+			$found  = wp_list_pluck( $groups['groups'], 'id' );
+			sort( $found );
+
+			$this->assertSame( $expected, $found );
+			$this->assertSame( 2, $groups['total'] );
+		}
+
+		// Existing callers supplying slashed search terms must still find escaped data.
+		$query_args['search_terms'] = wp_slash( $search );
+		$groups                    = BP_Groups_Group::get( $query_args );
+		$this->assertContains( $escaped_id, wp_list_pluck( $groups['groups'], 'id' ) );
+	}
+
+	public static function group_search_slash_cases() {
+		return array(
+			'apostrophe prefix'     => array( 'name', "'Tis Sweet", "'*" ),
+			'apostrophe suffix'     => array( 'name', "Sweet's", "*'s" ),
+			'double quote prefix'   => array( 'name', '"Quoted Group', '"*' ),
+			'backslash prefix'      => array( 'name', '\\Path Group', '\\*' ),
+			'literal wildcards'     => array( 'name', "Member's 100%_Group", "Member's 100%_" ),
+			'description quote'     => array( 'description', "Alice's club", "Alice's" ),
+			'description quotes'    => array( 'description', 'A "quoted" club', '"quoted"' ),
+			'description backslash' => array( 'description', 'A \\Path club', '\\Path' ),
+		);
+	}
+
+	/**
+	 * @group get
 	 */
 	public function test_get_search_with_left_wildcard() {
 		$g1 = self::factory()->group->create( array(
@@ -1434,8 +1500,6 @@ class BP_Tests_BP_Groups_Group_TestCases extends BP_UnitTestCase {
 	}
 
 	public function test_get_by_letter_starts_with_apostrophe() {
-		$this->markTestSkipped( 'Known defect: apostrophe-prefixed group names are not returned by the letter query.' );
-
 		$g1 = self::factory()->group->create( array(
 			'name' => "'Tis Sweet",
 			'description' => 'Neat',
@@ -1451,6 +1515,63 @@ class BP_Tests_BP_Groups_Group_TestCases extends BP_UnitTestCase {
 
 		$this->assertSame( array( $g1 ), $found );
 		$this->assertNotContains( $g2, $found );
+	}
+
+	public function test_get_by_letter_with_mixed_storage_and_pagination() {
+		global $wpdb;
+
+		$escaped_id = self::factory()->group->create(
+			array(
+				'name'          => "'Escaped Group",
+				'date_created'  => '2020-01-02 00:00:00',
+				'last_activity' => '2020-01-02 00:00:00',
+			)
+		);
+		$plain_id = self::factory()->group->create(
+			array(
+				'name'          => "'Plain Group",
+				'date_created'  => '2020-01-01 00:00:00',
+				'last_activity' => '2020-01-01 00:00:00',
+			)
+		);
+		self::factory()->group->create(
+			array(
+				'name'        => 'Another Group',
+				'description' => "'Only the description starts with an apostrophe",
+			)
+		);
+
+		// Keep one fixture in the plain storage format used by imports or custom filters.
+		$this->assertSame(
+			1,
+			$wpdb->update(
+				buddypress()->groups->table_name,
+				array( 'name' => "'Plain Group" ),
+				array( 'id' => $plain_id ),
+				array( '%s' ),
+				array( '%d' )
+			)
+		);
+		wp_cache_delete( $plain_id, 'bp_groups' );
+
+		$groups = BP_Groups_Group::get_by_letter( "'" );
+		$this->assertSame( array( $escaped_id, $plain_id ), wp_list_pluck( $groups['groups'], 'id' ) );
+		$this->assertSame( 2, $groups['total'] );
+
+		$page_one = BP_Groups_Group::get_by_letter( "'", 1, 1 );
+		$page_two = BP_Groups_Group::get_by_letter( "'", 1, 2 );
+		$this->assertSame( array( $escaped_id ), wp_list_pluck( $page_one['groups'], 'id' ) );
+		$this->assertSame( array( $plain_id ), wp_list_pluck( $page_two['groups'], 'id' ) );
+		$this->assertSame( 2, $page_one['total'] );
+		$this->assertSame( 2, $page_two['total'] );
+
+		$excluded = BP_Groups_Group::get_by_letter( "'", null, null, true, array( $escaped_id ) );
+		$this->assertSame( array( $plain_id ), wp_list_pluck( $excluded['groups'], 'id' ) );
+		$this->assertSame( 1, $excluded['total'] );
+
+		// Searching must not normalize or otherwise rewrite either stored name.
+		$this->assertSame( wp_slash( "'Escaped Group" ), $wpdb->get_var( $wpdb->prepare( 'SELECT name FROM ' . buddypress()->groups->table_name . ' WHERE id = %d', $escaped_id ) ) );
+		$this->assertSame( "'Plain Group", $wpdb->get_var( $wpdb->prepare( 'SELECT name FROM ' . buddypress()->groups->table_name . ' WHERE id = %d', $plain_id ) ) );
 	}
 
 	/**

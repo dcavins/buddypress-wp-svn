@@ -1249,10 +1249,11 @@ class BP_Groups_Group {
 			}
 			$search = trim( $search, '*' );
 
+			// Before-save filters can add slashes. Match both stored forms without changing the data.
+			$search_terms  = array_unique( array( $search, wp_slash( $search ) ) );
 			$searches      = array();
 			$leading_wild  = ( 'leading' === $wild || 'both' === $wild ) ? '%' : '';
 			$trailing_wild = ( 'trailing' === $wild || 'both' === $wild ) ? '%' : '';
-			$wildcarded    = $leading_wild . bp_esc_like( $search ) . $trailing_wild;
 
 			$search_columns = array( 'name', 'description' );
 			if ( $r['search_columns'] ) {
@@ -1260,7 +1261,10 @@ class BP_Groups_Group {
 			}
 
 			foreach ( $search_columns as $search_column ) {
-				$searches[] = $wpdb->prepare( "$search_column LIKE %s", $wildcarded );
+				foreach ( $search_terms as $search_term ) {
+					$wildcarded = $leading_wild . bp_esc_like( $search_term ) . $trailing_wild;
+					$searches[] = $wpdb->prepare( "$search_column LIKE %s", $wildcarded );
+				}
 			}
 
 			$where_conditions['search'] = '(' . implode( ' OR ', $searches ) . ')';
