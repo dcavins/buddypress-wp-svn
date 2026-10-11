@@ -245,7 +245,46 @@ class BP_Tests_Group_Cover_REST_Controller extends BP_Test_REST_Controller_Testc
 	 * @group prepare_item
 	 */
 	public function test_prepare_item() {
-		$this->markTestSkipped( 'Coverage for prepare_item_for_response() has not been implemented.' );
+		global $wp_rest_additional_fields;
+
+		$original_fields = $wp_rest_additional_fields;
+		$cover_url       = 'https://example.org/cover.jpg';
+
+		register_rest_field(
+			'bp_attachments_group_cover',
+			'test_edit_field',
+			array(
+				'get_callback' => static function () {
+					return 'Additional value';
+				},
+				'schema'       => array(
+					'type'    => 'string',
+					'context' => array( 'edit' ),
+				),
+			)
+		);
+
+		try {
+			foreach ( array( null, 'view', 'edit' ) as $context ) {
+				$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d/cover', $this->group_id ) );
+				if ( null !== $context ) {
+					$request->set_param( 'context', $context );
+				}
+
+				$response = $this->endpoint->prepare_item_for_response( $cover_url, $request );
+				$expected = array( 'image' => $cover_url );
+
+				if ( 'edit' === $context ) {
+					$expected['test_edit_field'] = 'Additional value';
+				}
+
+				$this->assertInstanceOf( 'WP_REST_Response', $response );
+				$this->assertSame( 200, $response->get_status() );
+				$this->assertSame( $expected, $response->get_data() );
+			}
+		} finally {
+			$wp_rest_additional_fields = $original_fields;
+		}
 	}
 
 	public function test_get_item_schema() {
